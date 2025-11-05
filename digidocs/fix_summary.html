@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correction - Erreur Class OffreEmploi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .fix-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        
+        .fix-header {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .fix-content {
+            padding: 2rem;
+        }
+        
+        .error-section {
+            background: #fee2e2;
+            border-left: 5px solid #dc2626;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .fix-section {
+            background: #dcfce7;
+            border-left: 5px solid #059669;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .test-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+        }
+        
+        .test-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="fix-container">
+        <div class="fix-header">
+            <h1><i class="fas fa-bug me-3"></i>Erreur Corrigée</h1>
+            <p class="lead mb-0">Fatal error: Class "OffreEmploi" not found</p>
+        </div>
+        
+        <div class="fix-content">
+            <div class="error-section">
+                <h3><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Erreur Identifiée</h3>
+                <p><strong>Message d'erreur :</strong></p>
+                <div class="code-block">
+Fatal error: Uncaught Error: Class "OffreEmploi" not found in 
+C:\xampp\htdocs\document\digidocs\jobs\create.php:12
+                </div>
+                
+                <p><strong>Cause :</strong></p>
+                <ul>
+                    <li>La classe <code>OffreEmploi</code> n'existe pas dans le système</li>
+                    <li>Le nom correct de la classe est <code>Job</code></li>
+                    <li>La méthode correcte est <code>createOffre()</code> et non <code>create()</code></li>
+                </ul>
+            </div>
+
+            <div class="fix-section">
+                <h3><i class="fas fa-wrench me-2 text-success"></i>Corrections Apportées</h3>
+                
+                <h5>1. Correction du nom de classe</h5>
+                <p><strong>Avant :</strong></p>
+                <div class="code-block">$offre = new OffreEmploi();</div>
+                
+                <p><strong>Après :</strong></p>
+                <div class="code-block">$offre = new Job();</div>
+                
+                <h5>2. Correction du nom de méthode</h5>
+                <p><strong>Avant :</strong></p>
+                <div class="code-block">$result = $offre->create($data);</div>
+                
+                <p><strong>Après :</strong></p>
+                <div class="code-block">$result = $offre->createOffre($data);</div>
+                
+                <h5>3. Suppression du paramètre inutile</h5>
+                <p><strong>Avant :</strong></p>
+                <div class="code-block">'utilisateur_id' => $_SESSION['user_id']</div>
+                
+                <p><strong>Après :</strong></p>
+                <div class="code-block">// Supprimé car la classe Job utilise directement $_SESSION['user_id']</div>
+            </div>
+
+            <div class="fix-section">
+                <h3><i class="fas fa-info-circle me-2 text-info"></i>Informations sur la Classe Job</h3>
+                
+                <p><strong>Fichier :</strong> <code>/classes/Job.php</code></p>
+                <p><strong>Méthodes principales :</strong></p>
+                <ul>
+                    <li><code>createOffre($data)</code> - Créer une offre d'emploi</li>
+                    <li><code>getOffres($filters)</code> - Récupérer les offres</li>
+                    <li><code>candidater($offreId, $candidatureData, $cvFile)</code> - Postuler à une offre</li>
+                </ul>
+                
+                <p><strong>Table utilisée :</strong> <code>offres_emploi</code></p>
+            </div>
+
+            <div class="text-center">
+                <h4>Tester les Corrections</h4>
+                <a href="/document/digidocs/test_job_creation.php" class="test-link">
+                    <i class="fas fa-flask me-2"></i>Test de la Classe Job
+                </a>
+                <a href="/document/digidocs/jobs/create.php" class="test-link">
+                    <i class="fas fa-plus me-2"></i>Créer une Offre d'Emploi
+                </a>
+                <a href="/document/digidocs/jobs/list.php" class="test-link">
+                    <i class="fas fa-list me-2"></i>Liste des Offres
+                </a>
+            </div>
+
+            <div class="alert alert-success mt-4">
+                <h5><i class="fas fa-check-circle me-2"></i>Résultat</h5>
+                <p class="mb-0">
+                    L'erreur <strong>"Class OffreEmploi not found"</strong> est maintenant corrigée. 
+                    La page <code>jobs/create.php</code> devrait fonctionner normalement.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animation d'entrée
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.error-section, .fix-section');
+            sections.forEach((section, index) => {
+                section.style.opacity = '0';
+                section.style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                    section.style.transition = 'all 0.6s ease';
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                }, index * 300);
+            });
+        });
+    </script>
+</body>
+</html>

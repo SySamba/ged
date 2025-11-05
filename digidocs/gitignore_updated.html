@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitIgnore Mis à Jour - DigiDocs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .update-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        
+        .update-header {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .update-content {
+            padding: 2rem;
+        }
+        
+        .success-section {
+            background: #dcfce7;
+            border-left: 5px solid #059669;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .info-section {
+            background: #f0f9ff;
+            border-left: 5px solid #2563eb;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .file-structure {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+        }
+        
+        .ignored {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        
+        .kept {
+            color: #059669;
+            font-weight: bold;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        
+        .comparison-table th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+        
+        .before {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .after {
+            background: #dcfce7;
+            color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="update-container">
+        <div class="update-header">
+            <h1><i class="fas fa-git-alt me-3"></i>GitIgnore Mis à Jour</h1>
+            <p class="lead mb-0">Seul le fichier database.php est maintenant ignoré</p>
+        </div>
+        
+        <div class="update-content">
+            <div class="success-section">
+                <h3><i class="fas fa-check-circle me-2 text-success"></i>Modification Effectuée</h3>
+                
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Aspect</th>
+                            <th>Avant</th>
+                            <th>Maintenant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Dossier config/</strong></td>
+                            <td class="before">Entièrement ignoré</td>
+                            <td class="after">Accessible (sauf database.php)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dossier database/</strong></td>
+                            <td class="before">Entièrement ignoré</td>
+                            <td class="after">Accessible</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fichier database.php</strong></td>
+                            <td class="before">Ignoré (dans dossier ignoré)</td>
+                            <td class="after">Spécifiquement ignoré</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h3><i class="fas fa-file-code me-2 text-primary"></i>Contenu du .gitignore</h3>
+                
+                <p>Le fichier <code>.gitignore</code> contient maintenant :</p>
+                
+                <div class="code-block">
+# Fichier de configuration de base de données sensible
+config/database.php
+
+# Fichiers de configuration sensibles
+*.env
+.env
+.env.local
+.env.production
+
+# Dossiers d'uploads et fichiers utilisateur
+uploads/
+files/
+storage/
+temp/
+tmp/
+
+# Logs
+logs/
+*.log
+error.log
+access.log
+
+# Cache
+cache/
+*.cache
+
+# Fichiers système
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE et éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Composer
+vendor/
+composer.lock
+
+# Node modules (si utilisé)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*.old
+*.orig
+
+# Fichiers temporaires PHP
+*.tmp
+*.temp
+
+# Sessions PHP
+sessions/
+
+# Fichiers de test
+test_*.php
+debug_*.php
+*_test.php
+
+# Documentation générée
+docs/generated/
+
+# Fichiers de déploiement
+deploy.php
+deployment.json
+
+# Certificats et clés
+*.pem
+*.key
+*.crt
+*.p12
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3><i class="fas fa-folder-tree me-2 text-info"></i>Structure du Projet</h3>
+                
+                <div class="file-structure">
+digidocs/
+├── .gitignore
+├── config/
+│   ├── <span class="ignored">database.php</span>          # ⚠️ IGNORÉ
+│   ├── <span class="kept">database.example.php</span>    # ✅ Versionné
+│   └── <span class="kept">config.php</span>              # ✅ Versionné
+├── database/
+│   ├── <span class="kept">schema.sql</span>              # ✅ Versionné
+│   ├── <span class="kept">migrate_user_profile.php</span> # ✅ Versionné
+│   └── <span class="kept">autres_scripts.sql</span>      # ✅ Versionné
+├── classes/                    # ✅ Versionné
+├── includes/                   # ✅ Versionné
+├── documents/                  # ✅ Versionné
+├── templates/                  # ✅ Versionné
+├── jobs/                       # ✅ Versionné
+├── admin/                      # ✅ Versionné
+├── assets/                     # ✅ Versionné
+├── <span class="ignored">uploads/</span>                   # ⚠️ IGNORÉ
+└── <span class="ignored">logs/</span>                      # ⚠️ IGNORÉ
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3><i class="fas fa-cogs me-2 text-warning"></i>Instructions de Configuration</h3>
+                
+                <p><strong>Pour configurer un nouveau déploiement :</strong></p>
+                
+                <ol>
+                    <li>Cloner le projet depuis Git</li>
+                    <li>Copier le fichier d'exemple :
+                        <div class="code-block">cp config/database.example.php config/database.php</div>
+                    </li>
+                    <li>Modifier <code>config/database.php</code> avec vos paramètres :
+                        <div class="code-block">
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'votre_base');
+define('DB_USER', 'votre_utilisateur');
+define('DB_PASS', 'votre_mot_de_passe');
+                        </div>
+                    </li>
+                    <li>Créer les dossiers nécessaires :
+                        <div class="code-block">mkdir uploads logs cache</div>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="alert alert-success">
+                <h5><i class="fas fa-shield-alt me-2"></i>Sécurité</h5>
+                <p class="mb-0">
+                    Le fichier <code>config/database.php</code> contient vos mots de passe de base de données 
+                    et ne sera jamais versionné dans Git. Seul le fichier d'exemple sera partagé.
+                </p>
+            </div>
+
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle me-2"></i>Avantages</h5>
+                <ul class="mb-0">
+                    <li>Tous les autres fichiers restent versionnés</li>
+                    <li>Les scripts de base de données sont accessibles</li>
+                    <li>Seules les informations sensibles sont protégées</li>
+                    <li>Configuration plus flexible pour l'équipe</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animation d'entrée
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.success-section, .info-section');
+            sections.forEach((section, index) => {
+                section.style.opacity = '0';
+                section.style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                    section.style.transition = 'all 0.6s ease';
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                }, index * 300);
+            });
+        });
+    </script>
+</body>
+</html>

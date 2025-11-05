@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Améliorations du Template Viewer - DigiDocs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        
+        .demo-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .demo-content {
+            padding: 3rem 2rem;
+        }
+        
+        .improvement-card {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 5px solid #2563eb;
+            transition: transform 0.3s ease;
+        }
+        
+        .improvement-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .before, .after {
+            padding: 1.5rem;
+            border-radius: 10px;
+        }
+        
+        .before {
+            background: #fee2e2;
+            border: 2px solid #dc2626;
+        }
+        
+        .after {
+            background: #dcfce7;
+            border: 2px solid #059669;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-list i {
+            color: #059669;
+            margin-right: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1><i class="fas fa-magic me-3"></i>Template Viewer - Transformation Complète</h1>
+            <p class="lead mb-0">De basique à professionnel en quelques modifications</p>
+        </div>
+        
+        <div class="demo-content">
+            <div class="improvement-card">
+                <h3><i class="fas fa-palette me-2"></i>Design Moderne</h3>
+                <div class="before-after">
+                    <div class="before">
+                        <h5><i class="fas fa-times-circle me-2"></i>Avant</h5>
+                        <ul>
+                            <li>Interface basique Bootstrap</li>
+                            <li>Couleurs ternes</li>
+                            <li>Pas d'animations</li>
+                            <li>Layout traditionnel</li>
+                        </ul>
+                    </div>
+                    <div class="after">
+                        <h5><i class="fas fa-check-circle me-2"></i>Après</h5>
+                        <ul>
+                            <li>Design moderne avec gradients</li>
+                            <li>Palette de couleurs cohérente</li>
+                            <li>Animations fluides</li>
+                            <li>Container centralisé élégant</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="improvement-card">
+                <h3><i class="fas fa-cogs me-2"></i>Fonctionnalités Interactives</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-expand"></i><strong>Mode Plein Écran</strong> - Visualisation immersive</li>
+                    <li><i class="fas fa-keyboard"></i><strong>Raccourcis Clavier</strong> - Navigation rapide (Ctrl+P, Ctrl+F, Échap)</li>
+                    <li><i class="fas fa-bell"></i><strong>Notifications</strong> - Feedback visuel pour les actions</li>
+                    <li><i class="fas fa-magic"></i><strong>Animations</strong> - Transitions fluides et professionnelles</li>
+                    <li><i class="fas fa-copy"></i><strong>Copie de Contenu</strong> - Ctrl+Shift+C pour copier</li>
+                </ul>
+            </div>
+
+            <div class="improvement-card">
+                <h3><i class="fas fa-file-alt me-2"></i>Templates Améliorés</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-file-contract fa-3x text-primary mb-3"></i>
+                            <h5>Contrats</h5>
+                            <p>Design professionnel avec sections colorées et signatures stylisées</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-receipt fa-3x text-success mb-3"></i>
+                            <h5>Factures</h5>
+                            <p>Tableaux modernes avec effets hover et totaux mis en valeur</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-shopping-cart fa-3x text-warning mb-3"></i>
+                            <h5>Bons de Commande</h5>
+                            <p>Layout grid responsive avec conditions mises en évidence</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="improvement-card">
+                <h3><i class="fas fa-mobile-alt me-2"></i>Responsive Design</h3>
+                <p>Interface parfaitement adaptée à tous les écrans :</p>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <i class="fas fa-desktop fa-2x text-info mb-2"></i>
+                        <p><strong>Desktop</strong><br>Expérience complète</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-tablet-alt fa-2x text-info mb-2"></i>
+                        <p><strong>Tablette</strong><br>Layout adaptatif</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-mobile-alt fa-2x text-info mb-2"></i>
+                        <p><strong>Mobile</strong><br>Interface optimisée</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-print fa-2x text-info mb-2"></i>
+                        <p><strong>Impression</strong><br>Version épurée</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="improvement-card">
+                <h3><i class="fas fa-rocket me-2"></i>Performance & UX</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Améliorations Techniques</h5>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-tachometer-alt"></i>Chargement optimisé</li>
+                            <li><i class="fas fa-code"></i>Code CSS moderne</li>
+                            <li><i class="fas fa-compress"></i>Styles minifiés</li>
+                            <li><i class="fas fa-shield-alt"></i>Sécurité renforcée</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Expérience Utilisateur</h5>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-eye"></i>Interface intuitive</li>
+                            <li><i class="fas fa-hand-pointer"></i>Interactions fluides</li>
+                            <li><i class="fas fa-universal-access"></i>Accessibilité améliorée</li>
+                            <li><i class="fas fa-heart"></i>Design attrayant</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="/document/digidocs/templates/view.php?id=1" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-eye me-2"></i>Voir le Nouveau Design
+                </a>
+                <a href="/document/digidocs/templates/list.php" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-list me-2"></i>Liste des Templates
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animation d'entrée pour les cartes
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.improvement-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>
