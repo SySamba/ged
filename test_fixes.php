@@ -98,8 +98,8 @@ try {
     echo "<h3>✅ Tests terminés</h3>";
     echo "<p><strong>Pages à tester maintenant :</strong></p>";
     echo "<ul>";
-    echo "<li><a href='/document/digidocs/profile.php' target='_blank'>Profile.php</a></li>";
-    echo "<li><a href='/document/digidocs/settings.php' target='_blank'>Settings.php</a></li>";
+    echo "<li><a href='/document/profile.php' target='_blank'>Profile.php</a></li>";
+    echo "<li><a href='/document/settings.php' target='_blank'>Settings.php</a></li>";
     echo "</ul>";
     
 } catch (Exception $e) {

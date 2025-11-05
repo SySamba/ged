@@ -109,12 +109,12 @@ try {
     // 7. Résumé final
     echo "🎉 INSTALLATION TERMINÉE AVEC SUCCÈS !\n\n";
     echo "📋 Informations de connexion :\n";
-    echo "   🌐 URL : http://localhost/document/digidocs/\n";
+    echo "   🌐 URL : http://localhost/document/\n";
     echo "   📧 Email : sambasy837@gmail.com\n";
     echo "   🔑 Mot de passe : Touba2021@\n\n";
     echo "🔗 Liens utiles :\n";
-    echo "   • Connexion : http://localhost/document/digidocs/auth/login.php\n";
-    echo "   • Dashboard : http://localhost/document/digidocs/dashboard.php\n\n";
+    echo "   • Connexion : http://localhost/document/auth/login.php\n";
+    echo "   • Dashboard : http://localhost/document/dashboard.php\n\n";
     echo "⚠️ N'oubliez pas de supprimer ce fichier après installation !\n";
 
 } catch (Exception $e) {

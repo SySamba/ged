@@ -65,7 +65,7 @@ try {
     
     echo "<h3>✅ Tests terminés</h3>";
     echo "<p><strong>La page jobs/create.php devrait maintenant fonctionner :</strong></p>";
-    echo "<p><a href='/document/digidocs/jobs/create.php' target='_blank'>Tester jobs/create.php</a></p>";
+    echo "<p><a href='/document/jobs/create.php' target='_blank'>Tester jobs/create.php</a></p>";
     
 } catch (Exception $e) {
     echo "<p style='color: red;'>❌ Erreur lors des tests : " . $e->getMessage() . "</p>";

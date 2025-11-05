@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // Configuration générale
 define('APP_NAME', 'DigiDocs');
 define('APP_VERSION', '1.0.0');
-define('APP_URL', 'http://localhost/document/digidocs');
+define('APP_URL', 'http://localhost/document');
 
 // Chemins
 define('ROOT_PATH', dirname(__DIR__));

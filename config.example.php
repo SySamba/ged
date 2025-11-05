@@ -17,7 +17,7 @@ define('DB_CHARSET', 'utf8mb4');
 
 // Configuration de l'application
 define('APP_NAME', 'DigiDocs');
-define('APP_URL', 'http://localhost/document/digidocs');
+define('APP_URL', 'http://localhost/document');
 define('APP_VERSION', '1.0.0');
 
 // Chemins
