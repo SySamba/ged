@@ -61,6 +61,9 @@ spl_autoload_register(function ($class) {
     }
 });
 
+// Inclure la classe Database manuellement
+require_once __DIR__ . '/database.php';
+
 // Fonctions utilitaires
 function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
