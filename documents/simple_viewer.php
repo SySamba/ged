@@ -3,48 +3,102 @@ require_once __DIR__ . '/../config/config.php';
 requireLogin();
 
 $id = (int)($_GET['id'] ?? 0);
-$document = new Document();
-$doc = $document->getById($id);
 
-if (!$doc) {
-    echo '<h1>Document introuvable</h1>';
+if ($id <= 0) {
+    http_response_code(400);
+    echo '<h1>ID de document invalide</h1>';
     exit;
 }
 
-// Vérifier les permissions
-if (!hasPermission('documents', 'read') && $doc['utilisateur_id'] != $_SESSION['user_id']) {
-    echo '<h1>Permission insuffisante</h1>';
-    exit;
-}
-
-// Le chemin_fichier contient déjà le chemin complet
-$filePath = $doc['chemin_fichier'];
-$extension = strtolower(pathinfo($doc['nom_original'], PATHINFO_EXTENSION));
-
-if (!file_exists($filePath)) {
-    echo '<h1>Fichier introuvable</h1>';
-    echo '<p>Chemin: ' . $filePath . '</p>';
+try {
+    $document = new Document();
+    $doc = $document->getById($id);
+    
+    if (!$doc) {
+        http_response_code(404);
+        echo '<h1>Document introuvable</h1>';
+        exit;
+    }
+    
+    // Vérifier les permissions
+    if (!hasPermission('documents', 'read') && $doc['utilisateur_id'] != $_SESSION['user_id']) {
+        http_response_code(403);
+        echo '<h1>Permission insuffisante</h1>';
+        exit;
+    }
+    
+    // Le chemin_fichier contient déjà le chemin complet
+    $filePath = $doc['chemin_fichier'];
+    $extension = strtolower(pathinfo($doc['nom_original'], PATHINFO_EXTENSION));
+    
+    // Vérifier que le fichier existe
+    if (!file_exists($filePath)) {
+        http_response_code(404);
+        echo '<h1>Fichier introuvable</h1>';
+        echo '<p>Le fichier a peut-être été déplacé ou supprimé.</p>';
+        echo '<p><a href="' . APP_URL . '/documents/list.php">Retour à la liste</a></p>';
+        exit;
+    }
+    
+    // Vérifier que le fichier est lisible
+    if (!is_readable($filePath)) {
+        http_response_code(500);
+        echo '<h1>Erreur d\'accès au fichier</h1>';
+        echo '<p>Le fichier ne peut pas être lu.</p>';
+        exit;
+    }
+    
+} catch (Exception $e) {
+    http_response_code(500);
+    echo '<h1>Erreur serveur</h1>';
+    echo '<p>Une erreur est survenue lors de l\'accès au document.</p>';
+    error_log("Erreur simple_viewer.php: " . $e->getMessage());
     exit;
 }
 
 // Pour les PDF, affichage direct
 if ($extension === 'pdf') {
+    // Nettoyer le buffer de sortie
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    // Headers sécurisés pour PDF
     header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="' . $doc['nom_original'] . '"');
+    header('Content-Disposition: inline; filename="' . addslashes($doc['nom_original']) . '"');
     header('Content-Length: ' . filesize($filePath));
+    header('Cache-Control: private, max-age=0, must-revalidate');
+    header('Pragma: public');
+    
+    // Lire et envoyer le fichier
     readfile($filePath);
     exit;
 }
 
 // Pour les images, affichage direct
 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
+    // Nettoyer le buffer de sortie
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    // Détecter le type MIME
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $filePath);
     finfo_close($finfo);
     
+    // Vérifier que c'est bien une image
+    if (strpos($mimeType, 'image/') !== 0) {
+        $mimeType = 'application/octet-stream';
+    }
+    
+    // Headers sécurisés pour images
     header('Content-Type: ' . $mimeType);
-    header('Content-Disposition: inline; filename="' . $doc['nom_original'] . '"');
+    header('Content-Disposition: inline; filename="' . addslashes($doc['nom_original']) . '"');
     header('Content-Length: ' . filesize($filePath));
+    header('Cache-Control: private, max-age=3600');
+    
+    // Lire et envoyer le fichier
     readfile($filePath);
     exit;
 }
@@ -96,11 +150,18 @@ if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
             <strong>Taille :</strong> <?= formatFileSize($doc['taille_fichier']) ?><br>
             <strong>Type :</strong> <?= htmlspecialchars($doc['type_mime']) ?>
         </p>
-        <a href="<?= APP_URL ?>/documents/download.php?id=<?= $doc['id'] ?>" 
-           class="btn btn-primary btn-lg">
-            <i class="fas fa-download me-2"></i>
-            Télécharger
-        </a>
+        <div class="d-grid gap-2">
+            <a href="<?= APP_URL ?>/documents/download.php?id=<?= $doc['id'] ?>" 
+               class="btn btn-primary btn-lg">
+                <i class="fas fa-download me-2"></i>
+                Télécharger
+            </a>
+            <a href="<?= APP_URL ?>/documents/list.php" 
+               class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Retour à la liste
+            </a>
+        </div>
     </div>
 </body>
 </html>
