@@ -91,9 +91,17 @@ $isOffice = in_array($extension, ['doc', 'docx', 'xls', 'xlsx']);
                             </a>
                             <?php if (hasPermission('documents', 'update') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
                                 <a href="<?= APP_URL ?>/documents/edit.php?id=<?= $doc['id'] ?>" 
-                                   class="btn btn-sm btn-primary">
+                                   class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit me-1"></i>
                                     Modifier
+                                </a>
+                            <?php endif; ?>
+                            <?php if (hasPermission('documents', 'delete') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
+                                <a href="<?= APP_URL ?>/documents/delete.php?id=<?= $doc['id'] ?>" 
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?')">
+                                    <i class="fas fa-trash-alt me-1"></i>
+                                    Supprimer
                                 </a>
                             <?php endif; ?>
                         </div>

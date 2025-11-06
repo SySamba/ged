@@ -320,23 +320,47 @@ $totalPages = ceil($totalDocuments / $limit);
                                     </div>
                                 </div>
                                 
-                                <!-- Actions principales seulement -->
-                                <div class="d-flex gap-3 mb-3">
+                                <!-- Actions principales -->
+                                <div class="d-flex gap-2 mb-3">
                                     <a href="<?= APP_URL ?>/documents/simple_viewer.php?id=<?= $doc['id'] ?>" 
                                        class="btn btn-primary flex-fill"
                                        target="_blank"
                                        rel="noopener noreferrer"
                                        title="Ouvrir le document dans un nouvel onglet">
-                                        <i class="fas fa-external-link-alt me-2"></i>
+                                        <i class="fas fa-external-link-alt me-1"></i>
                                         Voir
                                     </a>
                                     <button class="btn btn-info flex-fill" 
                                             onclick="showDocumentDetails(<?= htmlspecialchars(json_encode($doc)) ?>)"
                                             title="Voir les informations détaillées">
-                                        <i class="fas fa-info-circle me-2"></i>
+                                        <i class="fas fa-info-circle me-1"></i>
                                         Détails
                                     </button>
                                 </div>
+                                
+                                <!-- Actions de gestion -->
+                                <?php if (hasPermission('documents', 'update') || $doc['utilisateur_id'] == $_SESSION['user_id'] || hasPermission('documents', 'delete')): ?>
+                                <div class="d-flex gap-2 mb-3">
+                                    <?php if (hasPermission('documents', 'update') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
+                                        <a href="<?= APP_URL ?>/documents/edit.php?id=<?= $doc['id'] ?>" 
+                                           class="btn btn-outline-warning flex-fill btn-sm"
+                                           title="Modifier les informations du document">
+                                            <i class="fas fa-edit me-1"></i>
+                                            Modifier
+                                        </a>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (hasPermission('documents', 'delete') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
+                                        <a href="<?= APP_URL ?>/documents/delete.php?id=<?= $doc['id'] ?>" 
+                                           class="btn btn-outline-danger flex-fill btn-sm"
+                                           title="Supprimer ce document"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?')">
+                                            <i class="fas fa-trash-alt me-1"></i>
+                                            Supprimer
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
                                 
                                 <?php if ($doc['categorie_nom']): ?>
                                     <div class="mb-2">
@@ -475,6 +499,16 @@ $totalPages = ceil($totalDocuments / $limit);
                                 <a href="<?= APP_URL ?>/documents/download.php?id=${doc.id}" class="btn btn-success">
                                     <i class="fas fa-download me-2"></i>Télécharger
                                 </a>
+                                ${(<?= hasPermission('documents', 'update') ? 'true' : 'false' ?> || doc.utilisateur_id == <?= $_SESSION['user_id'] ?>) ? `
+                                <a href="<?= APP_URL ?>/documents/edit.php?id=${doc.id}" class="btn btn-warning">
+                                    <i class="fas fa-edit me-2"></i>Modifier
+                                </a>
+                                ` : ''}
+                                ${(<?= hasPermission('documents', 'delete') ? 'true' : 'false' ?> || doc.utilisateur_id == <?= $_SESSION['user_id'] ?>) ? `
+                                <a href="<?= APP_URL ?>/documents/delete.php?id=${doc.id}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?')">
+                                    <i class="fas fa-trash-alt me-2"></i>Supprimer
+                                </a>
+                                ` : ''}
                                 <a href="<?= APP_URL ?>/documents/viewer.php?id=${doc.id}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                                     <i class="fas fa-external-link-alt me-2"></i>Ouvrir le document
                                 </a>
