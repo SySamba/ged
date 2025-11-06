@@ -55,8 +55,10 @@ $totalPages = ceil($totalDocuments / $limit);
         /* Améliorations UX pour la liste des documents */
         .document-card {
             transition: all 0.3s ease;
+            height: 100%;
             position: relative;
             overflow: hidden;
+            min-height: 420px; /* Augmenter la hauteur minimale */
         }
         
         .document-card:hover {
@@ -66,6 +68,58 @@ $totalPages = ceil($totalDocuments / $limit);
         
         .document-card .btn {
             transition: all 0.2s ease;
+            font-weight: 500;
+            padding: 0.5rem 1rem; /* Augmenter le padding des boutons */
+            border-radius: 0.375rem;
+        }
+        
+        /* Améliorer la visibilité du bouton supprimer */
+        .btn-outline-danger {
+            border-width: 2px;
+            font-weight: 600;
+        }
+        
+        .btn-outline-danger:hover {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        /* Améliorer tous les boutons d'action */
+        .document-card .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            min-height: 38px; /* Hauteur minimale pour tous les boutons */
+        }
+        
+        /* Espacement entre les boutons */
+        .document-card .d-flex.gap-2 {
+            gap: 0.75rem !important;
+        }
+        
+        /* Améliorer l'espacement vertical dans les cartes */
+        .document-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Boutons d'action plus visibles */
+        .document-card .btn-outline-danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+        
+        .document-card .btn-outline-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        .document-card .btn-outline-secondary {
+            background-color: rgba(108, 117, 125, 0.1);
+            border-color: #6c757d;
+            color: #495057;
         }
         
         .document-card .btn:hover {
@@ -75,6 +129,32 @@ $totalPages = ceil($totalDocuments / $limit);
         /* Espacement amélioré pour les boutons */
         .d-flex.gap-3 {
             gap: 1rem !important;
+        }
+        
+        /* Améliorer la visibilité des boutons de templates en bas de page */
+        .template-buttons {
+            position: sticky;
+            bottom: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .template-buttons .btn {
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            min-height: 45px;
+        }
+        
+        .template-buttons .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         
         .btn {
@@ -310,19 +390,21 @@ $totalPages = ceil($totalDocuments / $limit);
                         </a>
                     </div>
                 <?php else: ?>
-                    <div class="document-grid">
+                    <div class="row g-4">
                         <?php foreach ($documents as $doc): ?>
-                            <div class="document-card">
-                                <!-- En-tête du document -->
-                                <div class="d-flex align-items-start mb-3">
-                                    <div class="file-icon <?= strtolower(pathinfo($doc['nom_original'], PATHINFO_EXTENSION)) ?> me-3">
-                                        <i class="fas fa-<?= getFileTypeIcon($doc['type_mime']) ?>"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1"><?= htmlspecialchars($doc['nom_original']) ?></h6>
-                                        <small class="text-muted"><?= formatFileSize($doc['taille_fichier']) ?></small>
-                                    </div>
-                                </div>
+                            <div class="col-xl-4 col-lg-6 col-md-6">
+                                <div class="card shadow-sm document-card h-100">
+                                    <div class="card-body d-flex flex-column">
+                                        <!-- En-tête du document -->
+                                        <div class="d-flex align-items-start mb-3">
+                                            <div class="file-icon <?= strtolower(pathinfo($doc['nom_original'], PATHINFO_EXTENSION)) ?> me-3">
+                                                <i class="fas fa-<?= getFileTypeIcon($doc['type_mime']) ?>"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1"><?= htmlspecialchars($doc['nom_original']) ?></h6>
+                                                <small class="text-muted"><?= formatFileSize($doc['taille_fichier']) ?></small>
+                                            </div>
+                                        </div>
                                 
                                 <!-- Actions principales -->
                                 <div class="d-flex gap-2 mb-3">

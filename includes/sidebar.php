@@ -1,5 +1,45 @@
 <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
     <div class="position-sticky pt-3">
+        <style>
+            /* Améliorer la visibilité des liens de la sidebar */
+            .sidebar .nav-link {
+                padding: 0.75rem 1rem;
+                font-size: 0.95rem;
+                font-weight: 500;
+                border-radius: 0.5rem;
+                margin: 0.25rem 0.5rem;
+                transition: all 0.2s ease;
+            }
+            
+            .sidebar .nav-link:hover {
+                background-color: rgba(0, 123, 255, 0.1);
+                color: #0d6efd;
+                transform: translateX(5px);
+            }
+            
+            .sidebar .nav-link.active {
+                background-color: #0d6efd;
+                color: white;
+            }
+            
+            /* Mettre en évidence certains liens importants */
+            .sidebar .nav-link[href*="orders.php"] {
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                color: white;
+                font-weight: 600;
+            }
+            
+            .sidebar .nav-link[href*="orders.php"]:hover {
+                background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+                color: white;
+                transform: translateX(8px) scale(1.02);
+            }
+            
+            .sidebar .nav-link i {
+                width: 20px;
+                text-align: center;
+            }
+        </style>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : '' ?>" 
