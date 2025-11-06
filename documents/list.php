@@ -52,12 +52,10 @@ $totalPages = ceil($totalDocuments / $limit);
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="<?= APP_URL ?>/assets/css/dashboard.css" rel="stylesheet">
     <style>
-        /* Améliorations UX pour la liste des documents */
+        /* Styles pour les cartes de documents */
         .document-card {
             transition: all 0.3s ease;
             height: 100%;
-            position: relative;
-            overflow: hidden;
         }
         
         .document-card:hover {
@@ -65,131 +63,29 @@ $totalPages = ceil($totalDocuments / $limit);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
         }
         
-        .btn {
-            padding: 0.75rem 1.5rem;
-            font-size: 0.95rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        
-        /* Icônes de fichiers améliorées */
         .file-icon {
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
             color: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         
-        /* Badge de catégorie amélioré */
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.375rem;
+        .file-icon.pdf { background: #dc3545; }
+        .file-icon.doc, .file-icon.docx { background: #0d6efd; }
+        .file-icon.xls, .file-icon.xlsx { background: #198754; }
+        .file-icon.jpg, .file-icon.jpeg, .file-icon.png, .file-icon.gif { background: #fd7e14; }
+        .file-icon { background: #6c757d; }
+        
+        .btn {
+            transition: all 0.2s ease;
         }
         
-        /* Animation de chargement */
-        .document-grid {
-            animation: fadeInUp 0.6s ease-out;
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Responsive amélioré */
-        @media (max-width: 768px) {
-            .document-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            
-            .d-flex.gap-3 {
-                flex-direction: column;
-                gap: 0.75rem !important;
-            }
-            
-            .btn {
-                padding: 0.875rem 1rem;
-                font-size: 1rem;
-            }
-        }
-        
-        /* États des boutons */
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-        }
-        
-        .btn-info {
-            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
-            border: none;
-            color: white;
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
-            border: none;
-        }
-        
-        .btn-outline-secondary {
-            border-color: #dee2e6;
-            color: #6c757d;
-        }
-        
-        .btn-outline-secondary:hover {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: white;
-        }
-        
-        /* Toast personnalisé */
-        .toast {
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        /* Indicateur de chargement */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-        
-        .loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .btn:hover {
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -240,7 +136,7 @@ $totalPages = ceil($totalDocuments / $limit);
                                     <option value="">Toutes les catégories</option>
                                     <?php foreach ($categories as $cat): ?>
                                         <option value="<?= $cat['id'] ?>" <?= $categorie_id == $cat['id'] ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($cat['nom']) ?> (<?= $cat['nb_documents'] ?>)
+                                            <?= htmlspecialchars($cat['nom']) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -276,6 +172,25 @@ $totalPages = ceil($totalDocuments / $limit);
                     </div>
                 </div>
 
+                <!-- Messages -->
+                <?php if (isset($_SESSION['success'])): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <?= $_SESSION['success'] ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <?php unset($_SESSION['success']); ?>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <?= $_SESSION['error'] ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <?php unset($_SESSION['error']); ?>
+                <?php endif; ?>
+
                 <!-- Liste des documents -->
                 <?php if (empty($documents)): ?>
                     <div class="text-center py-5">
@@ -297,7 +212,8 @@ $totalPages = ceil($totalDocuments / $limit);
                     <div class="row g-4">
                         <?php foreach ($documents as $doc): ?>
                             <div class="col-lg-6 col-md-6">
-                            <div class="card shadow-sm document-card h-100">
+                                <div class="card shadow-sm document-card h-100">
+                                    <div class="card-body d-flex flex-column">
                                         <!-- En-tête du document -->
                                         <div class="d-flex align-items-start mb-3">
                                             <div class="file-icon <?= strtolower(pathinfo($doc['nom_original'], PATHINFO_EXTENSION)) ?> me-3">
@@ -308,73 +224,78 @@ $totalPages = ceil($totalDocuments / $limit);
                                                 <small class="text-muted"><?= formatFileSize($doc['taille_fichier']) ?></small>
                                             </div>
                                         </div>
-                                
-                                <!-- Actions principales -->
-                                <div class="d-flex gap-2 mb-3">
-                                    <a href="<?= APP_URL ?>/documents/simple_viewer.php?id=<?= $doc['id'] ?>" 
-                                       class="btn btn-primary flex-fill"
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       title="Ouvrir le document dans un nouvel onglet">
-                                        <i class="fas fa-external-link-alt me-1"></i>
-                                        Voir
-                                    </a>
-                                    <button class="btn btn-info flex-fill" 
-                                            onclick="showDocumentDetails(<?= htmlspecialchars(json_encode($doc)) ?>)"
-                                            title="Voir les informations détaillées">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Détails
-                                    </button>
-                                </div>
-                                
-                                <!-- Actions de gestion -->
-                                <?php if (hasPermission('documents', 'update') || $doc['utilisateur_id'] == $_SESSION['user_id'] || hasPermission('documents', 'delete') || hasPermission('documents', 'archive')): ?>
-                                <div class="d-flex gap-2 mb-3">
-                                    <?php if (hasPermission('documents', 'update') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
-                                        <a href="<?= APP_URL ?>/documents/edit.php?id=<?= $doc['id'] ?>" 
-                                           class="btn btn-outline-warning flex-fill btn-sm"
-                                           title="Modifier les informations du document">
-                                            <i class="fas fa-edit me-1"></i>
-                                            Modifier
-                                        </a>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (hasPermission('documents', 'archive') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
-                                        <a href="<?= APP_URL ?>/documents/archive.php?id=<?= $doc['id'] ?>&action=archive" 
-                                           class="btn btn-outline-secondary flex-fill btn-sm"
-                                           title="Archiver ce document">
-                                            <i class="fas fa-archive me-1"></i>
-                                            Archiver
-                                        </a>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (hasPermission('documents', 'delete') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
-                                        <a href="<?= APP_URL ?>/documents/delete.php?id=<?= $doc['id'] ?>" 
-                                           class="btn btn-outline-danger flex-fill btn-sm"
-                                           title="Supprimer ce document"
-                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?')">
-                                            <i class="fas fa-trash-alt me-1"></i>
-                                            Supprimer
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <?php if ($doc['categorie_nom']): ?>
-                                    <div class="mb-2">
-                                        <span class="badge" style="background-color: <?= $doc['categorie_couleur'] ?>">
-                                            <?= htmlspecialchars($doc['categorie_nom']) ?>
-                                        </span>
+                                        
+                                        <!-- Actions principales -->
+                                        <div class="d-flex gap-2 mb-3">
+                                            <a href="<?= APP_URL ?>/documents/simple_viewer.php?id=<?= $doc['id'] ?>" 
+                                               class="btn btn-primary flex-fill"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               title="Ouvrir le document dans un nouvel onglet">
+                                                <i class="fas fa-external-link-alt me-1"></i>
+                                                Voir
+                                            </a>
+                                            <button class="btn btn-info flex-fill" 
+                                                    onclick="showDocumentDetails(<?= htmlspecialchars(json_encode($doc)) ?>)"
+                                                    title="Voir les informations détaillées">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Détails
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Actions de gestion -->
+                                        <?php if (hasPermission('documents', 'update') || $doc['utilisateur_id'] == $_SESSION['user_id'] || hasPermission('documents', 'delete') || hasPermission('documents', 'archive')): ?>
+                                        <div class="d-flex gap-2 mb-3">
+                                            <?php if (hasPermission('documents', 'update') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
+                                                <a href="<?= APP_URL ?>/documents/edit.php?id=<?= $doc['id'] ?>" 
+                                                   class="btn btn-outline-warning flex-fill btn-sm"
+                                                   title="Modifier les informations du document">
+                                                    <i class="fas fa-edit me-1"></i>
+                                                    Modifier
+                                                </a>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (hasPermission('documents', 'archive') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
+                                                <a href="<?= APP_URL ?>/documents/archive.php?id=<?= $doc['id'] ?>&action=archive" 
+                                                   class="btn btn-outline-secondary flex-fill btn-sm"
+                                                   title="Archiver ce document">
+                                                    <i class="fas fa-archive me-1"></i>
+                                                    Archiver
+                                                </a>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (hasPermission('documents', 'delete') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
+                                                <a href="<?= APP_URL ?>/documents/delete.php?id=<?= $doc['id'] ?>" 
+                                                   class="btn btn-outline-danger flex-fill btn-sm"
+                                                   title="Supprimer ce document"
+                                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?')">
+                                                    <i class="fas fa-trash-alt me-1"></i>
+                                                    Supprimer
+                                                </a>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Catégorie -->
+                                        <?php if ($doc['categorie_nom']): ?>
+                                            <div class="mb-2">
+                                                <span class="badge" style="background-color: <?= $doc['categorie_couleur'] ?>">
+                                                    <?= htmlspecialchars($doc['categorie_nom']) ?>
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Description -->
+                                        <?php if ($doc['description']): ?>
+                                            <p class="small text-muted mb-2"><?= htmlspecialchars(substr($doc['description'], 0, 100)) ?><?= strlen($doc['description']) > 100 ? '...' : '' ?></p>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Footer avec date et utilisateur -->
+                                        <div class="d-flex justify-content-between align-items-center text-muted small mt-auto">
+                                            <span><?= date('d/m/Y', strtotime($doc['date_upload'])) ?></span>
+                                            <span><?= htmlspecialchars($doc['utilisateur_prenom'] . ' ' . $doc['utilisateur_nom']) ?></span>
+                                        </div>
                                     </div>
-                                <?php endif; ?>
-                                
-                                <?php if ($doc['description']): ?>
-                                    <p class="small text-muted mb-2"><?= htmlspecialchars(substr($doc['description'], 0, 100)) ?><?= strlen($doc['description']) > 100 ? '...' : '' ?></p>
-                                <?php endif; ?>
-                                
-                                <div class="d-flex justify-content-between align-items-center text-muted small">
-                                    <span><?= date('d/m/Y', strtotime($doc['date_upload'])) ?></span>
-                                    <span><?= htmlspecialchars($doc['utilisateur_prenom'] . ' ' . $doc['utilisateur_nom']) ?></span>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -415,80 +336,60 @@ $totalPages = ceil($totalDocuments / $limit);
         </div>
     </div>
 
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-
+        // Fonction pour afficher les détails d'un document dans un modal
         function showDocumentDetails(doc) {
-            // Créer un modal simple pour les détails
             const modalHtml = `
-                <div class="modal fade" id="detailsModal" tabindex="-1">
+                <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">
+                                <h5 class="modal-title" id="detailsModalLabel">
                                     <i class="fas fa-info-circle me-2"></i>
                                     Détails du document
                                 </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <h6><i class="fas fa-file me-2"></i>Informations générales</h6>
-                                        <table class="table table-sm">
-                                            <tr>
-                                                <td><strong>Nom :</strong></td>
-                                                <td>${doc.nom_original}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Taille :</strong></td>
-                                                <td>${formatFileSize(doc.taille_fichier)}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Type :</strong></td>
-                                                <td>${doc.type_mime}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Catégorie :</strong></td>
-                                                <td>${doc.categorie_nom ? `<span class="badge" style="background-color: ${doc.categorie_couleur}">${doc.categorie_nom}</span>` : '<span class="text-muted">Aucune</span>'}</td>
-                                            </tr>
-                                        </table>
+                                    <div class="col-md-3 text-center mb-3">
+                                        <div class="file-icon ${doc.nom_original.split('.').pop().toLowerCase()} mx-auto mb-2" style="width: 80px; height: 80px; font-size: 2rem;">
+                                            <i class="fas fa-file"></i>
+                                        </div>
+                                        <h6>${doc.nom_original}</h6>
+                                        <small class="text-muted">${formatFileSize(doc.taille_fichier)}</small>
                                     </div>
-                                    <div class="col-md-6">
-                                        <h6><i class="fas fa-clock me-2"></i>Dates et utilisateur</h6>
-                                        <table class="table table-sm">
-                                            <tr>
-                                                <td><strong>Uploadé le :</strong></td>
-                                                <td>${new Date(doc.date_upload).toLocaleDateString('fr-FR')}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Par :</strong></td>
-                                                <td>${doc.utilisateur_prenom} ${doc.utilisateur_nom}</td>
-                                            </tr>
-                                            ${doc.date_modification !== doc.date_upload ? `
-                                            <tr>
-                                                <td><strong>Modifié le :</strong></td>
-                                                <td>${new Date(doc.date_modification).toLocaleDateString('fr-FR')}</td>
-                                            </tr>
-                                            ` : ''}
-                                        </table>
+                                    <div class="col-md-9">
+                                        <div class="mb-3">
+                                            <h6><i class="fas fa-calendar me-2"></i>Informations générales</h6>
+                                            <p class="mb-1"><strong>Date d'upload :</strong> ${new Date(doc.date_upload).toLocaleDateString('fr-FR')}</p>
+                                            <p class="mb-1"><strong>Uploadé par :</strong> ${doc.utilisateur_prenom} ${doc.utilisateur_nom}</p>
+                                            <p class="mb-1"><strong>Type MIME :</strong> ${doc.type_mime}</p>
+                                        </div>
+                                        
+                                        ${doc.categorie_nom ? `
+                                        <div class="mb-3">
+                                            <h6><i class="fas fa-folder me-2"></i>Catégorie</h6>
+                                            <span class="badge" style="background-color: ${doc.categorie_couleur}">${doc.categorie_nom}</span>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        ${doc.mots_cles ? `
+                                        <div class="mb-3">
+                                            <h6><i class="fas fa-tags me-2"></i>Mots-clés</h6>
+                                            ${doc.mots_cles.split(',').map(m => m.trim()).filter(m => m).map(m => `<span class="badge bg-secondary me-1">${m}</span>`).join('')}
+                                        </div>
+                                        ` : ''}
+                                        
+                                        ${doc.description ? `
+                                        <div class="mb-3">
+                                            <h6><i class="fas fa-align-left me-2"></i>Description</h6>
+                                            <p class="text-muted">${doc.description}</p>
+                                        </div>
+                                        ` : ''}
                                     </div>
                                 </div>
-                                
-                                ${doc.mots_cles ? `
-                                <div class="mb-3">
-                                    <h6><i class="fas fa-tags me-2"></i>Mots-clés</h6>
-                                    ${doc.mots_cles.split(',').map(m => m.trim()).filter(m => m).map(m => `<span class="badge bg-secondary me-1">${m}</span>`).join('')}
-                                </div>
-                                ` : ''}
-                                
-                                ${doc.description ? `
-                                <div class="mb-3">
-                                    <h6><i class="fas fa-align-left me-2"></i>Description</h6>
-                                    <p class="text-muted">${doc.description}</p>
-                                </div>
-                                ` : ''}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -535,7 +436,6 @@ $totalPages = ceil($totalDocuments / $limit);
             });
         }
 
-
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 B';
             const k = 1024;
@@ -543,7 +443,6 @@ $totalPages = ceil($totalDocuments / $limit);
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-
     </script>
 </body>
 </html>
