@@ -140,6 +140,14 @@ class Document {
                 $params[] = $filters['utilisateur_id'];
             }
             
+            // Filtre par statut (par défaut, ne montrer que les documents actifs)
+            if (isset($filters['statut'])) {
+                $sql .= " AND d.statut = ?";
+                $params[] = $filters['statut'];
+            } else {
+                $sql .= " AND d.statut = 'actif'";
+            }
+            
             // Filtre par type de fichier
             if (!empty($filters['type_mime'])) {
                 $sql .= " AND d.type_mime LIKE ?";
@@ -612,6 +620,430 @@ class Document {
             return $result['total'] ?? 0;
         } catch (Exception $e) {
             return 0;
+        }
+    }
+    
+    /**
+     * Archiver un document
+     */
+    public function archive($id, $motif = null) {
+        try {
+            // Récupérer le document
+            $document = $this->getById($id);
+            if (!$document) {
+                return [
+                    'success' => false,
+                    'message' => 'Document introuvable'
+                ];
+            }
+            
+            // Vérifier les permissions
+            if (!hasPermission('documents', 'update') && $document['utilisateur_id'] != $_SESSION['user_id']) {
+                return [
+                    'success' => false,
+                    'message' => 'Permission insuffisante pour archiver ce document'
+                ];
+            }
+            
+            // Vérifier si le document n'est pas déjà archivé
+            if ($document['statut'] === 'archive') {
+                return [
+                    'success' => false,
+                    'message' => 'Ce document est déjà archivé'
+                ];
+            }
+            
+            // Archiver le document
+            $stmt = $this->pdo->prepare("
+                UPDATE documents 
+                SET statut = 'archive', 
+                    date_archivage = NOW(), 
+                    motif_archivage = ?, 
+                    archive_par = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$motif, $_SESSION['user_id'], $id]);
+            
+            // Enregistrer dans l'historique
+            $this->logArchivageAction($id, 'archive', $motif);
+            
+            logActivity('archivage_document', 'documents', $id, [
+                'motif' => $motif,
+                'nom_original' => $document['nom_original']
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Document archivé avec succès'
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de l\'archivage : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Désarchiver un document
+     */
+    public function unarchive($id) {
+        try {
+            // Récupérer le document
+            $document = $this->getById($id);
+            if (!$document) {
+                return [
+                    'success' => false,
+                    'message' => 'Document introuvable'
+                ];
+            }
+            
+            // Vérifier les permissions
+            if (!hasPermission('documents', 'update') && $document['utilisateur_id'] != $_SESSION['user_id']) {
+                return [
+                    'success' => false,
+                    'message' => 'Permission insuffisante pour désarchiver ce document'
+                ];
+            }
+            
+            // Vérifier si le document est archivé
+            if ($document['statut'] !== 'archive') {
+                return [
+                    'success' => false,
+                    'message' => 'Ce document n\'est pas archivé'
+                ];
+            }
+            
+            // Désarchiver le document
+            $stmt = $this->pdo->prepare("
+                UPDATE documents 
+                SET statut = 'actif', 
+                    date_archivage = NULL, 
+                    motif_archivage = NULL, 
+                    archive_par = NULL
+                WHERE id = ?
+            ");
+            $stmt->execute([$id]);
+            
+            // Enregistrer dans l'historique
+            $this->logArchivageAction($id, 'desarchive');
+            
+            logActivity('desarchivage_document', 'documents', $id, [
+                'nom_original' => $document['nom_original']
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Document désarchivé avec succès'
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erreur lors du désarchivage : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Supprimer définitivement un document (soft delete)
+     */
+    public function softDelete($id, $motif = null) {
+        try {
+            // Récupérer le document
+            $document = $this->getById($id);
+            if (!$document) {
+                return [
+                    'success' => false,
+                    'message' => 'Document introuvable'
+                ];
+            }
+            
+            // Vérifier les permissions
+            if (!hasPermission('documents', 'delete') && $document['utilisateur_id'] != $_SESSION['user_id']) {
+                return [
+                    'success' => false,
+                    'message' => 'Permission insuffisante pour supprimer ce document'
+                ];
+            }
+            
+            // Marquer comme supprimé
+            $stmt = $this->pdo->prepare("
+                UPDATE documents 
+                SET statut = 'supprime', 
+                    date_archivage = NOW(), 
+                    motif_archivage = ?, 
+                    archive_par = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$motif, $_SESSION['user_id'], $id]);
+            
+            // Enregistrer dans l'historique
+            $this->logArchivageAction($id, 'supprime', $motif);
+            
+            logActivity('suppression_soft_document', 'documents', $id, [
+                'motif' => $motif,
+                'nom_original' => $document['nom_original']
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Document supprimé avec succès'
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de la suppression : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Restaurer un document supprimé
+     */
+    public function restore($id) {
+        try {
+            // Récupérer le document
+            $document = $this->getById($id);
+            if (!$document) {
+                return [
+                    'success' => false,
+                    'message' => 'Document introuvable'
+                ];
+            }
+            
+            // Vérifier les permissions
+            if (!hasPermission('documents', 'delete')) {
+                return [
+                    'success' => false,
+                    'message' => 'Permission insuffisante pour restaurer ce document'
+                ];
+            }
+            
+            // Vérifier si le document est supprimé
+            if ($document['statut'] !== 'supprime') {
+                return [
+                    'success' => false,
+                    'message' => 'Ce document n\'est pas supprimé'
+                ];
+            }
+            
+            // Restaurer le document
+            $stmt = $this->pdo->prepare("
+                UPDATE documents 
+                SET statut = 'actif', 
+                    date_archivage = NULL, 
+                    motif_archivage = NULL, 
+                    archive_par = NULL
+                WHERE id = ?
+            ");
+            $stmt->execute([$id]);
+            
+            // Enregistrer dans l'historique
+            $this->logArchivageAction($id, 'restaure');
+            
+            logActivity('restauration_document', 'documents', $id, [
+                'nom_original' => $document['nom_original']
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Document restauré avec succès'
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de la restauration : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Archiver en masse des documents
+     */
+    public function archiveBulk($documentIds, $motif = null) {
+        try {
+            if (empty($documentIds)) {
+                return [
+                    'success' => false,
+                    'message' => 'Aucun document sélectionné'
+                ];
+            }
+            
+            $successCount = 0;
+            $errorCount = 0;
+            $errors = [];
+            
+            foreach ($documentIds as $id) {
+                $result = $this->archive($id, $motif);
+                if ($result['success']) {
+                    $successCount++;
+                } else {
+                    $errorCount++;
+                    $errors[] = "Document ID $id : " . $result['message'];
+                }
+            }
+            
+            $message = "$successCount document(s) archivé(s) avec succès";
+            if ($errorCount > 0) {
+                $message .= ", $errorCount erreur(s)";
+            }
+            
+            return [
+                'success' => $successCount > 0,
+                'message' => $message,
+                'details' => [
+                    'success_count' => $successCount,
+                    'error_count' => $errorCount,
+                    'errors' => $errors
+                ]
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de l\'archivage en masse : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Obtenir les documents par statut
+     */
+    public function getByStatus($statut, $filters = []) {
+        try {
+            $filters['statut'] = $statut;
+            return $this->search($filters);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+    
+    /**
+     * Obtenir les statistiques d'archivage
+     */
+    public function getArchivingStats() {
+        try {
+            $stats = [];
+            
+            // Statistiques par statut
+            $stmt = $this->pdo->query("
+                SELECT statut, COUNT(*) as count, SUM(taille_fichier) as total_size
+                FROM documents 
+                GROUP BY statut
+            ");
+            $stats['by_status'] = $stmt->fetchAll();
+            
+            // Documents archivés récemment (7 derniers jours)
+            $stmt = $this->pdo->query("
+                SELECT COUNT(*) as count 
+                FROM documents 
+                WHERE statut = 'archive' 
+                AND date_archivage >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            ");
+            $stats['recent_archived'] = $stmt->fetch()['count'];
+            
+            // Top des motifs d'archivage
+            $stmt = $this->pdo->query("
+                SELECT motif_archivage, COUNT(*) as count 
+                FROM documents 
+                WHERE statut IN ('archive', 'supprime') 
+                AND motif_archivage IS NOT NULL
+                GROUP BY motif_archivage 
+                ORDER BY count DESC 
+                LIMIT 5
+            ");
+            $stats['top_motifs'] = $stmt->fetchAll();
+            
+            // Documents candidats à l'archivage (plus de 12 mois)
+            $stmt = $this->pdo->query("
+                SELECT COUNT(*) as count 
+                FROM documents 
+                WHERE statut = 'actif' 
+                AND date_upload < DATE_SUB(NOW(), INTERVAL 12 MONTH)
+            ");
+            $stats['candidates_archivage'] = $stmt->fetch()['count'];
+            
+            return $stats;
+            
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+    
+    /**
+     * Appliquer les règles d'archivage automatique
+     */
+    public function applyAutoArchivingRules() {
+        try {
+            $archivedCount = 0;
+            
+            // Récupérer les règles actives
+            $stmt = $this->pdo->query("
+                SELECT * FROM regles_archivage 
+                WHERE actif = TRUE 
+                ORDER BY categorie_id IS NULL, duree_mois DESC
+            ");
+            $rules = $stmt->fetchAll();
+            
+            foreach ($rules as $rule) {
+                // Construire la requête selon la règle
+                $sql = "
+                    SELECT id, nom_original 
+                    FROM documents 
+                    WHERE statut = 'actif' 
+                    AND date_upload < DATE_SUB(NOW(), INTERVAL ? MONTH)
+                ";
+                $params = [$rule['duree_mois']];
+                
+                if ($rule['categorie_id']) {
+                    $sql .= " AND categorie_id = ?";
+                    $params[] = $rule['categorie_id'];
+                }
+                
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+                $candidates = $stmt->fetchAll();
+                
+                // Archiver les documents candidats
+                foreach ($candidates as $candidate) {
+                    $motif = "Archivage automatique - Règle: " . $rule['nom'];
+                    $result = $this->archive($candidate['id'], $motif);
+                    if ($result['success']) {
+                        $archivedCount++;
+                    }
+                }
+            }
+            
+            return [
+                'success' => true,
+                'message' => "$archivedCount document(s) archivé(s) automatiquement",
+                'archived_count' => $archivedCount
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de l\'archivage automatique : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Enregistrer une action d'archivage dans l'historique
+     */
+    private function logArchivageAction($documentId, $action, $motif = null) {
+        try {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO historique_archivage (document_id, action, utilisateur_id, motif)
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmt->execute([$documentId, $action, $_SESSION['user_id'], $motif]);
+        } catch (Exception $e) {
+            // Log silencieux - ne pas faire échouer l'opération principale
         }
     }
 }

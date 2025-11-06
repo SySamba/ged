@@ -5,6 +5,7 @@ requireLogin();
 // Récupérer les paramètres de recherche
 $search = sanitize($_GET['search'] ?? '');
 $categorie_id = !empty($_GET['categorie_id']) ? (int)$_GET['categorie_id'] : null;
+$statut = sanitize($_GET['statut'] ?? '');
 $date_debut = sanitize($_GET['date_debut'] ?? '');
 $date_fin = sanitize($_GET['date_fin'] ?? '');
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -21,6 +22,7 @@ $filters = [
 
 if ($search) $filters['search'] = $search;
 if ($categorie_id) $filters['categorie_id'] = $categorie_id;
+if ($statut) $filters['statut'] = $statut;
 if ($date_debut) $filters['date_debut'] = $date_debut;
 if ($date_fin) $filters['date_fin'] = $date_fin;
 
@@ -246,7 +248,7 @@ $totalPages = ceil($totalDocuments / $limit);
                                        placeholder="Nom, mots-clés, description...">
                             </div>
                             
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label for="categorie_id" class="form-label">Catégorie</label>
                                 <select class="form-select" id="categorie_id" name="categorie_id">
                                     <option value="">Toutes les catégories</option>
@@ -255,6 +257,16 @@ $totalPages = ceil($totalDocuments / $limit);
                                             <?= htmlspecialchars($cat['nom']) ?> (<?= $cat['nb_documents'] ?>)
                                         </option>
                                     <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <label for="statut" class="form-label">Statut</label>
+                                <select class="form-select" id="statut" name="statut">
+                                    <option value="">Tous les statuts</option>
+                                    <option value="actif" <?= $statut === 'actif' ? 'selected' : '' ?>>Actifs</option>
+                                    <option value="archive" <?= $statut === 'archive' ? 'selected' : '' ?>>Archivés</option>
+                                    <option value="supprime" <?= $statut === 'supprime' ? 'selected' : '' ?>>Supprimés</option>
                                 </select>
                             </div>
                             
@@ -350,6 +362,13 @@ $totalPages = ceil($totalDocuments / $limit);
                                         </a>
                                     <?php endif; ?>
                                     
+                                    <a href="<?= APP_URL ?>/documents/archive.php?id=<?= $doc['id'] ?>&action=archive" 
+                                       class="btn btn-outline-secondary flex-fill btn-sm"
+                                       title="Archiver ce document">
+                                        <i class="fas fa-archive me-1"></i>
+                                        Archiver
+                                    </a>
+                                    
                                     <?php if (hasPermission('documents', 'delete') || $doc['utilisateur_id'] == $_SESSION['user_id']): ?>
                                         <a href="<?= APP_URL ?>/documents/delete.php?id=<?= $doc['id'] ?>" 
                                            class="btn btn-outline-danger flex-fill btn-sm"
@@ -362,13 +381,20 @@ $totalPages = ceil($totalDocuments / $limit);
                                 </div>
                                 <?php endif; ?>
                                 
-                                <?php if ($doc['categorie_nom']): ?>
-                                    <div class="mb-2">
+                                <div class="mb-2">
+                                    <?php if ($doc['categorie_nom']): ?>
                                         <span class="badge" style="background-color: <?= $doc['categorie_couleur'] ?>">
                                             <?= htmlspecialchars($doc['categorie_nom']) ?>
                                         </span>
-                                    </div>
-                                <?php endif; ?>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (isset($doc['statut']) && $doc['statut'] !== 'actif'): ?>
+                                        <span class="badge bg-<?= getStatusColor($doc['statut']) ?> ms-1">
+                                            <i class="fas fa-<?= getStatusIcon($doc['statut']) ?> me-1"></i>
+                                            <?= getStatusLabel($doc['statut']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                                 
                                 <?php if ($doc['description']): ?>
                                     <p class="small text-muted mb-2"><?= htmlspecialchars(substr($doc['description'], 0, 100)) ?><?= strlen($doc['description']) > 100 ? '...' : '' ?></p>
