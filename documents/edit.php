@@ -32,7 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'description' => sanitize($_POST['description'] ?? '')
     ];
     
-    $result = $document->update($id, $data);
+    // Vérifier s'il y a un nouveau fichier à uploader
+    $newFile = null;
+    if (isset($_FILES['nouveau_fichier']) && $_FILES['nouveau_fichier']['error'] === UPLOAD_ERR_OK) {
+        $newFile = $_FILES['nouveau_fichier'];
+    }
+    
+    $result = $document->updateWithFile($id, $data, $newFile);
     
     if ($result['success']) {
         $_SESSION['success'] = $result['message'];
@@ -202,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <!-- Formulaire de modification -->
                 <div class="form-card">
-                    <form method="POST" id="editForm">
+                    <form method="POST" id="editForm" enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-4">
@@ -270,6 +276,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
 
+                        <div class="mb-4">
+                            <label for="nouveau_fichier" class="form-label">
+                                <i class="fas fa-upload me-2"></i>
+                                Remplacer le fichier <span class="text-muted">(optionnel)</span>
+                            </label>
+                            <input type="file" class="form-control" id="nouveau_fichier" name="nouveau_fichier" 
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.bmp,.webp">
+                            <div class="form-text">
+                                <strong>Attention :</strong> Si vous sélectionnez un nouveau fichier, il remplacera définitivement le fichier actuel.
+                                <br>Types autorisés : PDF, Word, Excel, Images (JPG, PNG, GIF, etc.)
+                            </div>
+                            <div id="file-preview" class="mt-2" style="display: none;">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Nouveau fichier sélectionné :</strong> <span id="file-name"></span>
+                                    <br><small>Taille : <span id="file-size"></span></small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-3 justify-content-end">
                             <a href="<?= APP_URL ?>/documents/view.php?id=<?= $doc['id'] ?>" 
                                class="btn btn-cancel">
@@ -302,17 +328,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
 
+        // Aperçu du fichier sélectionné
+        document.getElementById('nouveau_fichier').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('file-preview');
+            const fileName = document.getElementById('file-name');
+            const fileSize = document.getElementById('file-size');
+            
+            if (file) {
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
         // Validation du formulaire
         document.getElementById('editForm').addEventListener('submit', function(e) {
             const motsCles = document.getElementById('mots_cles').value.trim();
             const description = document.getElementById('description').value.trim();
+            const newFile = document.getElementById('nouveau_fichier').files[0];
             
-            if (!motsCles && !description) {
+            if (!motsCles && !description && !newFile) {
                 e.preventDefault();
-                alert('Veuillez remplir au moins les mots-clés ou la description pour justifier la modification.');
+                alert('Veuillez effectuer au moins une modification (mots-clés, description ou fichier) pour justifier la modification.');
                 return false;
             }
+            
+            if (newFile) {
+                if (!confirm('Êtes-vous sûr de vouloir remplacer le fichier actuel ? Cette action est irréversible.')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
         });
+
+        // Fonction pour formater la taille des fichiers
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
 
         // Auto-resize textarea
         const textarea = document.getElementById('description');

@@ -234,6 +234,141 @@ class Document {
     }
     
     /**
+     * Mettre à jour un document avec possibilité de remplacer le fichier
+     */
+    public function updateWithFile($id, $data, $newFile = null) {
+        try {
+            // Récupérer le document actuel
+            $currentDoc = $this->getById($id);
+            if (!$currentDoc) {
+                return [
+                    'success' => false,
+                    'message' => 'Document introuvable'
+                ];
+            }
+            
+            // Vérifier les permissions
+            if (!hasPermission('documents', 'update') && $currentDoc['utilisateur_id'] != $_SESSION['user_id']) {
+                return [
+                    'success' => false,
+                    'message' => 'Permission insuffisante pour modifier ce document'
+                ];
+            }
+            
+            $fields = [];
+            $params = [];
+            $oldFilePath = null;
+            
+            // Traiter le nouveau fichier si fourni
+            if ($newFile) {
+                $validation = $this->validateFile($newFile);
+                if (!$validation['success']) {
+                    return $validation;
+                }
+                
+                // Générer un nom de fichier sécurisé
+                $extension = strtolower(pathinfo($newFile['name'], PATHINFO_EXTENSION));
+                $filename = uniqid() . '_' . time() . '.' . $extension;
+                $filepath = UPLOAD_PATH . '/documents/' . $filename;
+                
+                // Déplacer le nouveau fichier
+                if (!move_uploaded_file($newFile['tmp_name'], $filepath)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Erreur lors du téléchargement du nouveau fichier'
+                    ];
+                }
+                
+                // Préparer les champs pour la mise à jour du fichier
+                $fields[] = "nom_original = ?";
+                $params[] = $newFile['name'];
+                
+                $fields[] = "nom_fichier = ?";
+                $params[] = $filename;
+                
+                $fields[] = "chemin_fichier = ?";
+                $params[] = $filepath;
+                
+                $fields[] = "type_mime = ?";
+                $params[] = $newFile['type'];
+                
+                $fields[] = "taille_fichier = ?";
+                $params[] = $newFile['size'];
+                
+                // Marquer l'ancien fichier pour suppression
+                $oldFilePath = $currentDoc['chemin_fichier'];
+            }
+            
+            // Ajouter les autres champs de mise à jour
+            if (isset($data['categorie_id'])) {
+                $fields[] = "categorie_id = ?";
+                $params[] = $data['categorie_id'];
+            }
+            
+            if (isset($data['mots_cles'])) {
+                $fields[] = "mots_cles = ?";
+                $params[] = $data['mots_cles'];
+            }
+            
+            if (isset($data['description'])) {
+                $fields[] = "description = ?";
+                $params[] = $data['description'];
+            }
+            
+            if (empty($fields)) {
+                return [
+                    'success' => false,
+                    'message' => 'Aucune donnée à mettre à jour'
+                ];
+            }
+            
+            // Ajouter la date de modification
+            $fields[] = "date_modification = NOW()";
+            $params[] = $id;
+            
+            // Exécuter la mise à jour
+            $sql = "UPDATE documents SET " . implode(', ', $fields) . " WHERE id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            
+            // Supprimer l'ancien fichier si un nouveau a été uploadé
+            if ($oldFilePath && file_exists($oldFilePath)) {
+                unlink($oldFilePath);
+            }
+            
+            // Logger l'activité
+            $logData = $data;
+            if ($newFile) {
+                $logData['nouveau_fichier'] = $newFile['name'];
+                $logData['ancien_fichier'] = $currentDoc['nom_original'];
+            }
+            
+            logActivity('modification_document_complet', 'documents', $id, $logData);
+            
+            $message = 'Document mis à jour avec succès';
+            if ($newFile) {
+                $message .= ' (fichier remplacé)';
+            }
+            
+            return [
+                'success' => true,
+                'message' => $message
+            ];
+            
+        } catch (Exception $e) {
+            // Supprimer le nouveau fichier en cas d'erreur
+            if (isset($filepath) && file_exists($filepath)) {
+                unlink($filepath);
+            }
+            
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
      * Supprimer un document
      */
     public function delete($id) {

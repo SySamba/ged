@@ -199,12 +199,8 @@ $totalPages = ceil($totalOffres / $limit);
                                             </small>
                                             <div class="btn-group">
                                                 <a href="<?= APP_URL ?>/jobs/view.php?id=<?= $offre['id'] ?>" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye me-1"></i>Voir
-                                                </a>
-                                                <a href="<?= APP_URL ?>/jobs/apply.php?id=<?= $offre['id'] ?>" 
                                                    class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-paper-plane me-1"></i>Postuler
+                                                    <i class="fas fa-eye me-1"></i>Voir les détails
                                                 </a>
                                             </div>
                                         </div>
