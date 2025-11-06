@@ -117,6 +117,14 @@ class Document {
             ";
             $params = [];
             
+            // Filtre par statut (par défaut, ne montrer que les documents actifs)
+            if (isset($filters['statut'])) {
+                $sql .= " AND d.statut = ?";
+                $params[] = $filters['statut'];
+            } else {
+                $sql .= " AND d.statut = 'actif'";
+            }
+            
             // Recherche par mot-clé
             if (!empty($filters['search'])) {
                 $sql .= " AND (MATCH(d.nom_original, d.mots_cles, d.description) AGAINST (? IN NATURAL LANGUAGE MODE)
@@ -138,14 +146,6 @@ class Document {
             if (!empty($filters['utilisateur_id'])) {
                 $sql .= " AND d.utilisateur_id = ?";
                 $params[] = $filters['utilisateur_id'];
-            }
-            
-            // Filtre par statut (par défaut, ne montrer que les documents actifs)
-            if (isset($filters['statut'])) {
-                $sql .= " AND d.statut = ?";
-                $params[] = $filters['statut'];
-            } else {
-                $sql .= " AND d.statut = 'actif'";
             }
             
             // Filtre par type de fichier
@@ -626,7 +626,7 @@ class Document {
     /**
      * Archiver un document
      */
-    public function archive($id, $motif = null) {
+    public function archive($id, $raison = null) {
         try {
             // Récupérer le document
             $document = $this->getById($id);
@@ -638,14 +638,14 @@ class Document {
             }
             
             // Vérifier les permissions
-            if (!hasPermission('documents', 'update') && $document['utilisateur_id'] != $_SESSION['user_id']) {
+            if (!hasPermission('documents', 'archive') && $document['utilisateur_id'] != $_SESSION['user_id']) {
                 return [
                     'success' => false,
                     'message' => 'Permission insuffisante pour archiver ce document'
                 ];
             }
             
-            // Vérifier si le document n'est pas déjà archivé
+            // Vérifier que le document n'est pas déjà archivé
             if ($document['statut'] === 'archive') {
                 return [
                     'success' => false,
@@ -658,18 +658,15 @@ class Document {
                 UPDATE documents 
                 SET statut = 'archive', 
                     date_archivage = NOW(), 
-                    motif_archivage = ?, 
-                    archive_par = ?
+                    archive_par = ?, 
+                    raison_archivage = ?
                 WHERE id = ?
             ");
-            $stmt->execute([$motif, $_SESSION['user_id'], $id]);
-            
-            // Enregistrer dans l'historique
-            $this->logArchivageAction($id, 'archive', $motif);
+            $stmt->execute([$_SESSION['user_id'], $raison, $id]);
             
             logActivity('archivage_document', 'documents', $id, [
-                'motif' => $motif,
-                'nom_original' => $document['nom_original']
+                'nom_original' => $document['nom_original'],
+                'raison' => $raison
             ]);
             
             return [
@@ -700,14 +697,14 @@ class Document {
             }
             
             // Vérifier les permissions
-            if (!hasPermission('documents', 'update') && $document['utilisateur_id'] != $_SESSION['user_id']) {
+            if (!hasPermission('documents', 'unarchive') && $document['utilisateur_id'] != $_SESSION['user_id']) {
                 return [
                     'success' => false,
                     'message' => 'Permission insuffisante pour désarchiver ce document'
                 ];
             }
             
-            // Vérifier si le document est archivé
+            // Vérifier que le document est archivé
             if ($document['statut'] !== 'archive') {
                 return [
                     'success' => false,
@@ -720,14 +717,11 @@ class Document {
                 UPDATE documents 
                 SET statut = 'actif', 
                     date_archivage = NULL, 
-                    motif_archivage = NULL, 
-                    archive_par = NULL
+                    archive_par = NULL, 
+                    raison_archivage = NULL
                 WHERE id = ?
             ");
             $stmt->execute([$id]);
-            
-            // Enregistrer dans l'historique
-            $this->logArchivageAction($id, 'desarchive');
             
             logActivity('desarchivage_document', 'documents', $id, [
                 'nom_original' => $document['nom_original']
@@ -747,9 +741,9 @@ class Document {
     }
     
     /**
-     * Supprimer définitivement un document (soft delete)
+     * Marquer un document pour suppression
      */
-    public function softDelete($id, $motif = null) {
+    public function markForDeletion($id, $raison = null) {
         try {
             // Récupérer le document
             $document = $this->getById($id);
@@ -768,40 +762,42 @@ class Document {
                 ];
             }
             
-            // Marquer comme supprimé
+            // Calculer la date de suppression prévue (30 jours par défaut)
+            $dateSuppression = date('Y-m-d H:i:s', strtotime('+30 days'));
+            
+            // Marquer pour suppression
             $stmt = $this->pdo->prepare("
                 UPDATE documents 
                 SET statut = 'supprime', 
                     date_archivage = NOW(), 
-                    motif_archivage = ?, 
-                    archive_par = ?
+                    archive_par = ?, 
+                    raison_archivage = ?,
+                    date_suppression_prevue = ?
                 WHERE id = ?
             ");
-            $stmt->execute([$motif, $_SESSION['user_id'], $id]);
+            $stmt->execute([$_SESSION['user_id'], $raison, $dateSuppression, $id]);
             
-            // Enregistrer dans l'historique
-            $this->logArchivageAction($id, 'supprime', $motif);
-            
-            logActivity('suppression_soft_document', 'documents', $id, [
-                'motif' => $motif,
-                'nom_original' => $document['nom_original']
+            logActivity('marquage_suppression_document', 'documents', $id, [
+                'nom_original' => $document['nom_original'],
+                'raison' => $raison,
+                'date_suppression_prevue' => $dateSuppression
             ]);
             
             return [
                 'success' => true,
-                'message' => 'Document supprimé avec succès'
+                'message' => 'Document marqué pour suppression (suppression prévue le ' . date('d/m/Y', strtotime($dateSuppression)) . ')'
             ];
             
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Erreur lors de la suppression : ' . $e->getMessage()
+                'message' => 'Erreur lors du marquage : ' . $e->getMessage()
             ];
         }
     }
     
     /**
-     * Restaurer un document supprimé
+     * Restaurer un document marqué pour suppression
      */
     public function restore($id) {
         try {
@@ -815,18 +811,18 @@ class Document {
             }
             
             // Vérifier les permissions
-            if (!hasPermission('documents', 'delete')) {
+            if (!hasPermission('documents', 'unarchive') && $document['utilisateur_id'] != $_SESSION['user_id']) {
                 return [
                     'success' => false,
                     'message' => 'Permission insuffisante pour restaurer ce document'
                 ];
             }
             
-            // Vérifier si le document est supprimé
+            // Vérifier que le document est marqué pour suppression
             if ($document['statut'] !== 'supprime') {
                 return [
                     'success' => false,
-                    'message' => 'Ce document n\'est pas supprimé'
+                    'message' => 'Ce document n\'est pas marqué pour suppression'
                 ];
             }
             
@@ -835,14 +831,12 @@ class Document {
                 UPDATE documents 
                 SET statut = 'actif', 
                     date_archivage = NULL, 
-                    motif_archivage = NULL, 
-                    archive_par = NULL
+                    archive_par = NULL, 
+                    raison_archivage = NULL,
+                    date_suppression_prevue = NULL
                 WHERE id = ?
             ");
             $stmt->execute([$id]);
-            
-            // Enregistrer dans l'historique
-            $this->logArchivageAction($id, 'restaure');
             
             logActivity('restauration_document', 'documents', $id, [
                 'nom_original' => $document['nom_original']
@@ -862,44 +856,141 @@ class Document {
     }
     
     /**
-     * Archiver en masse des documents
+     * Obtenir les documents par statut
      */
-    public function archiveBulk($documentIds, $motif = null) {
+    public function getByStatus($status, $filters = []) {
         try {
-            if (empty($documentIds)) {
+            $sql = "
+                SELECT d.*, c.nom as categorie_nom, c.couleur as categorie_couleur, c.icone as categorie_icone,
+                       u.nom as utilisateur_nom, u.prenom as utilisateur_prenom,
+                       ua.nom as archive_par_nom, ua.prenom as archive_par_prenom
+                FROM documents d
+                LEFT JOIN categories c ON d.categorie_id = c.id
+                LEFT JOIN users u ON d.utilisateur_id = u.id
+                LEFT JOIN users ua ON d.archive_par = ua.id
+                WHERE d.statut = ?
+            ";
+            $params = [$status];
+            
+            // Appliquer les filtres existants
+            if (!empty($filters['search'])) {
+                $sql .= " AND (MATCH(d.nom_original, d.mots_cles, d.description) AGAINST (? IN NATURAL LANGUAGE MODE)
+                         OR d.nom_original LIKE ? OR d.mots_cles LIKE ? OR d.description LIKE ?)";
+                $searchTerm = '%' . $filters['search'] . '%';
+                $params[] = $filters['search'];
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+            
+            if (!empty($filters['categorie_id'])) {
+                $sql .= " AND d.categorie_id = ?";
+                $params[] = $filters['categorie_id'];
+            }
+            
+            if (!empty($filters['utilisateur_id'])) {
+                $sql .= " AND d.utilisateur_id = ?";
+                $params[] = $filters['utilisateur_id'];
+            }
+            
+            // Si pas admin, ne voir que ses propres documents
+            if ($_SESSION['user_role'] !== 'admin' && !isset($filters['utilisateur_id'])) {
+                $sql .= " AND d.utilisateur_id = ?";
+                $params[] = $_SESSION['user_id'];
+            }
+            
+            // Tri
+            $orderBy = $filters['order_by'] ?? 'date_archivage';
+            $orderDir = $filters['order_dir'] ?? 'DESC';
+            $sql .= " ORDER BY d.{$orderBy} {$orderDir}";
+            
+            // Pagination
+            if (isset($filters['limit'])) {
+                $sql .= " LIMIT ?";
+                $params[] = (int)$filters['limit'];
+                
+                if (isset($filters['offset'])) {
+                    $sql .= " OFFSET ?";
+                    $params[] = (int)$filters['offset'];
+                }
+            }
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+            
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+    
+    /**
+     * Archivage en masse
+     */
+    public function archiveBulk($ids, $raison = null) {
+        try {
+            if (empty($ids)) {
                 return [
                     'success' => false,
                     'message' => 'Aucun document sélectionné'
                 ];
             }
             
-            $successCount = 0;
-            $errorCount = 0;
-            $errors = [];
+            $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+            $params = $ids;
+            $params[] = $_SESSION['user_id'];
+            $params[] = $raison;
             
-            foreach ($documentIds as $id) {
-                $result = $this->archive($id, $motif);
-                if ($result['success']) {
-                    $successCount++;
-                } else {
-                    $errorCount++;
-                    $errors[] = "Document ID $id : " . $result['message'];
+            // Vérifier les permissions pour chaque document
+            $stmt = $this->pdo->prepare("
+                SELECT id, nom_original, utilisateur_id 
+                FROM documents 
+                WHERE id IN ($placeholders) AND statut = 'actif'
+            ");
+            $stmt->execute($ids);
+            $documents = $stmt->fetchAll();
+            
+            $allowedIds = [];
+            foreach ($documents as $doc) {
+                if (hasPermission('documents', 'archive') || $doc['utilisateur_id'] == $_SESSION['user_id']) {
+                    $allowedIds[] = $doc['id'];
                 }
             }
             
-            $message = "$successCount document(s) archivé(s) avec succès";
-            if ($errorCount > 0) {
-                $message .= ", $errorCount erreur(s)";
+            if (empty($allowedIds)) {
+                return [
+                    'success' => false,
+                    'message' => 'Aucun document autorisé pour l\'archivage'
+                ];
             }
             
+            // Archiver les documents autorisés
+            $placeholders = str_repeat('?,', count($allowedIds) - 1) . '?';
+            $params = $allowedIds;
+            $params[] = $_SESSION['user_id'];
+            $params[] = $raison;
+            
+            $stmt = $this->pdo->prepare("
+                UPDATE documents 
+                SET statut = 'archive', 
+                    date_archivage = NOW(), 
+                    archive_par = ?, 
+                    raison_archivage = ?
+                WHERE id IN ($placeholders)
+            ");
+            $stmt->execute($params);
+            
+            $count = count($allowedIds);
+            
+            logActivity('archivage_masse_documents', 'documents', null, [
+                'nombre_documents' => $count,
+                'raison' => $raison,
+                'ids' => $allowedIds
+            ]);
+            
             return [
-                'success' => $successCount > 0,
-                'message' => $message,
-                'details' => [
-                    'success_count' => $successCount,
-                    'error_count' => $errorCount,
-                    'errors' => $errors
-                ]
+                'success' => true,
+                'message' => "$count document(s) archivé(s) avec succès"
             ];
             
         } catch (Exception $e) {
@@ -911,27 +1002,15 @@ class Document {
     }
     
     /**
-     * Obtenir les documents par statut
-     */
-    public function getByStatus($statut, $filters = []) {
-        try {
-            $filters['statut'] = $statut;
-            return $this->search($filters);
-        } catch (Exception $e) {
-            return [];
-        }
-    }
-    
-    /**
      * Obtenir les statistiques d'archivage
      */
     public function getArchivingStats() {
         try {
             $stats = [];
             
-            // Statistiques par statut
+            // Documents par statut
             $stmt = $this->pdo->query("
-                SELECT statut, COUNT(*) as count, SUM(taille_fichier) as total_size
+                SELECT statut, COUNT(*) as count 
                 FROM documents 
                 GROUP BY statut
             ");
@@ -946,26 +1025,22 @@ class Document {
             ");
             $stats['recent_archived'] = $stmt->fetch()['count'];
             
-            // Top des motifs d'archivage
-            $stmt = $this->pdo->query("
-                SELECT motif_archivage, COUNT(*) as count 
-                FROM documents 
-                WHERE statut IN ('archive', 'supprime') 
-                AND motif_archivage IS NOT NULL
-                GROUP BY motif_archivage 
-                ORDER BY count DESC 
-                LIMIT 5
-            ");
-            $stats['top_motifs'] = $stmt->fetchAll();
-            
-            // Documents candidats à l'archivage (plus de 12 mois)
+            // Documents à supprimer bientôt (30 prochains jours)
             $stmt = $this->pdo->query("
                 SELECT COUNT(*) as count 
                 FROM documents 
-                WHERE statut = 'actif' 
-                AND date_upload < DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                WHERE statut = 'supprime' 
+                AND date_suppression_prevue <= DATE_ADD(NOW(), INTERVAL 30 DAY)
             ");
-            $stats['candidates_archivage'] = $stmt->fetch()['count'];
+            $stats['pending_deletion'] = $stmt->fetch()['count'];
+            
+            // Espace libéré par l'archivage
+            $stmt = $this->pdo->query("
+                SELECT SUM(taille_fichier) as total_size 
+                FROM documents 
+                WHERE statut = 'archive'
+            ");
+            $stats['archived_size'] = $stmt->fetch()['total_size'] ?? 0;
             
             return $stats;
             
@@ -974,76 +1049,4 @@ class Document {
         }
     }
     
-    /**
-     * Appliquer les règles d'archivage automatique
-     */
-    public function applyAutoArchivingRules() {
-        try {
-            $archivedCount = 0;
-            
-            // Récupérer les règles actives
-            $stmt = $this->pdo->query("
-                SELECT * FROM regles_archivage 
-                WHERE actif = TRUE 
-                ORDER BY categorie_id IS NULL, duree_mois DESC
-            ");
-            $rules = $stmt->fetchAll();
-            
-            foreach ($rules as $rule) {
-                // Construire la requête selon la règle
-                $sql = "
-                    SELECT id, nom_original 
-                    FROM documents 
-                    WHERE statut = 'actif' 
-                    AND date_upload < DATE_SUB(NOW(), INTERVAL ? MONTH)
-                ";
-                $params = [$rule['duree_mois']];
-                
-                if ($rule['categorie_id']) {
-                    $sql .= " AND categorie_id = ?";
-                    $params[] = $rule['categorie_id'];
-                }
-                
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute($params);
-                $candidates = $stmt->fetchAll();
-                
-                // Archiver les documents candidats
-                foreach ($candidates as $candidate) {
-                    $motif = "Archivage automatique - Règle: " . $rule['nom'];
-                    $result = $this->archive($candidate['id'], $motif);
-                    if ($result['success']) {
-                        $archivedCount++;
-                    }
-                }
-            }
-            
-            return [
-                'success' => true,
-                'message' => "$archivedCount document(s) archivé(s) automatiquement",
-                'archived_count' => $archivedCount
-            ];
-            
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Erreur lors de l\'archivage automatique : ' . $e->getMessage()
-            ];
-        }
-    }
-    
-    /**
-     * Enregistrer une action d'archivage dans l'historique
-     */
-    private function logArchivageAction($documentId, $action, $motif = null) {
-        try {
-            $stmt = $this->pdo->prepare("
-                INSERT INTO historique_archivage (document_id, action, utilisateur_id, motif)
-                VALUES (?, ?, ?, ?)
-            ");
-            $stmt->execute([$documentId, $action, $_SESSION['user_id'], $motif]);
-        } catch (Exception $e) {
-            // Log silencieux - ne pas faire échouer l'opération principale
-        }
-    }
 }

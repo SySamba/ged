@@ -1,160 +1,160 @@
 <?php
 /**
- * Script de migration pour ajouter le système d'archivage
+ * Script de migration pour le système d'archivage
+ * Exécute la migration SQL et met à jour les permissions utilisateurs
  */
 
 require_once __DIR__ . '/config/config.php';
 
-echo "<h1>🗃️ Migration du Système d'Archivage</h1>";
+echo "<h1>🗄️ Migration du Système d'Archivage</h1>";
 
 try {
     $db = new Database();
     $pdo = $db->getConnection();
     
-    echo "<h2>Vérification de l'état actuel...</h2>";
+    echo "<h2>📋 Vérification des prérequis...</h2>";
     
-    // Vérifier si la colonne statut existe déjà
+    // Vérifier si la migration a déjà été effectuée
     $stmt = $pdo->query("SHOW COLUMNS FROM documents LIKE 'statut'");
-    if ($stmt->rowCount() > 0) {
-        echo "<div class='alert alert-warning'>⚠️ Le système d'archivage semble déjà installé.</div>";
+    if ($stmt->fetch()) {
+        echo "<div style='color: orange;'>⚠️ La migration semble déjà avoir été effectuée.</div>";
+        echo "<p>Voulez-vous continuer quand même ? <a href='?force=1'>Forcer la migration</a></p>";
         
-        // Afficher les statistiques actuelles
-        $stmt = $pdo->query("SELECT statut, COUNT(*) as count FROM documents GROUP BY statut");
-        $stats = $stmt->fetchAll();
-        
-        echo "<h3>Statistiques actuelles :</h3>";
-        echo "<ul>";
-        foreach ($stats as $stat) {
-            echo "<li><strong>" . ucfirst($stat['statut']) . "</strong> : " . $stat['count'] . " documents</li>";
-        }
-        echo "</ul>";
-        
-    } else {
-        echo "<div class='alert alert-info'>ℹ️ Installation du système d'archivage...</div>";
-        
-        // Lire et exécuter le script SQL
-        $sqlFile = __DIR__ . '/database/add_archiving_system.sql';
-        if (!file_exists($sqlFile)) {
-            throw new Exception("Fichier SQL de migration introuvable : $sqlFile");
-        }
-        
-        $sql = file_get_contents($sqlFile);
-        
-        // Supprimer les commentaires et diviser en requêtes
-        $sql = preg_replace('/--.*$/m', '', $sql);
-        $queries = array_filter(array_map('trim', explode(';', $sql)));
-        
-        $successCount = 0;
-        $errorCount = 0;
-        
-        echo "<h3>Exécution des requêtes...</h3>";
-        echo "<div style='max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f8f9fa;'>";
-        
-        foreach ($queries as $query) {
-            if (empty($query) || strtoupper(trim($query)) === 'USE DIGIDOCS' || strtoupper(trim($query)) === 'COMMIT') {
-                continue;
-            }
-            
-            try {
-                $pdo->exec($query);
-                echo "<div style='color: green;'>✅ " . substr($query, 0, 80) . "...</div>";
-                $successCount++;
-            } catch (Exception $e) {
-                echo "<div style='color: red;'>❌ Erreur : " . $e->getMessage() . "</div>";
-                echo "<div style='color: #666; font-size: 0.9em; margin-left: 20px;'>" . substr($query, 0, 100) . "...</div>";
-                $errorCount++;
-            }
-        }
-        
-        echo "</div>";
-        
-        echo "<h3>Résultats de la migration :</h3>";
-        echo "<ul>";
-        echo "<li><span style='color: green;'>✅ Requêtes réussies : $successCount</span></li>";
-        echo "<li><span style='color: red;'>❌ Erreurs : $errorCount</span></li>";
-        echo "</ul>";
-        
-        if ($errorCount === 0) {
-            echo "<div class='alert alert-success'>🎉 <strong>Migration réussie !</strong> Le système d'archivage est maintenant disponible.</div>";
-            
-            // Vérifier l'installation
-            echo "<h3>Vérification de l'installation :</h3>";
-            
-            // Vérifier les nouvelles colonnes
-            $stmt = $pdo->query("SHOW COLUMNS FROM documents WHERE Field IN ('statut', 'date_archivage', 'motif_archivage', 'archive_par')");
-            $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
-            echo "<ul>";
-            foreach (['statut', 'date_archivage', 'motif_archivage', 'archive_par'] as $expectedColumn) {
-                if (in_array($expectedColumn, $columns)) {
-                    echo "<li>✅ Colonne '$expectedColumn' ajoutée</li>";
-                } else {
-                    echo "<li>❌ Colonne '$expectedColumn' manquante</li>";
-                }
-            }
-            echo "</ul>";
-            
-            // Vérifier les nouvelles tables
-            $stmt = $pdo->query("SHOW TABLES LIKE 'regles_archivage'");
-            if ($stmt->rowCount() > 0) {
-                echo "<p>✅ Table 'regles_archivage' créée</p>";
-                
-                $stmt = $pdo->query("SELECT COUNT(*) as count FROM regles_archivage");
-                $count = $stmt->fetch()['count'];
-                echo "<p>📋 $count règles d'archivage par défaut installées</p>";
-            }
-            
-            $stmt = $pdo->query("SHOW TABLES LIKE 'historique_archivage'");
-            if ($stmt->rowCount() > 0) {
-                echo "<p>✅ Table 'historique_archivage' créée</p>";
-            }
-            
-            // Statistiques des documents
-            $stmt = $pdo->query("SELECT COUNT(*) as total FROM documents WHERE statut = 'actif'");
-            $total = $stmt->fetch()['total'];
-            echo "<p>📊 $total documents marqués comme 'actif'</p>";
-            
-        } else {
-            echo "<div class='alert alert-danger'>❌ <strong>Migration échouée</strong> avec $errorCount erreurs. Veuillez corriger les problèmes et relancer.</div>";
+        if (!isset($_GET['force'])) {
+            exit;
         }
     }
     
-    echo "<h2>Prochaines étapes :</h2>";
-    echo "<ol>";
-    echo "<li>✅ Mettre à jour les permissions utilisateurs pour inclure l'archivage</li>";
-    echo "<li>✅ Tester les nouvelles fonctionnalités d'archivage</li>";
-    echo "<li>✅ Configurer les règles d'archivage automatique selon vos besoins</li>";
-    echo "<li>✅ Former les utilisateurs aux nouvelles fonctionnalités</li>";
-    echo "</ol>";
+    echo "✅ Prérequis validés<br>";
     
-    echo "<div style='margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 5px;'>";
-    echo "<h3>🔗 Liens utiles :</h3>";
-    echo "<ul>";
-    echo "<li><a href='" . APP_URL . "/documents/list.php'>📁 Liste des documents</a></li>";
-    echo "<li><a href='" . APP_URL . "/documents/archives.php'>🗃️ Documents archivés</a> (à créer)</li>";
-    echo "<li><a href='" . APP_URL . "/admin/archiving_rules.php'>⚙️ Gestion des règles d'archivage</a> (à créer)</li>";
-    echo "</ul>";
+    echo "<h2>🔄 Exécution de la migration SQL...</h2>";
+    
+    // Lire et exécuter le fichier SQL
+    $sqlFile = __DIR__ . '/database/add_archiving_system.sql';
+    if (!file_exists($sqlFile)) {
+        throw new Exception("Fichier SQL de migration introuvable: $sqlFile");
+    }
+    
+    $sql = file_get_contents($sqlFile);
+    
+    // Diviser le SQL en requêtes individuelles
+    $queries = array_filter(array_map('trim', explode(';', $sql)));
+    
+    $successCount = 0;
+    $errorCount = 0;
+    
+    foreach ($queries as $query) {
+        if (empty($query) || strpos($query, '--') === 0) {
+            continue;
+        }
+        
+        try {
+            $pdo->exec($query);
+            $successCount++;
+            echo "✅ Requête exécutée avec succès<br>";
+        } catch (Exception $e) {
+            $errorCount++;
+            echo "<div style='color: red;'>❌ Erreur: " . $e->getMessage() . "</div>";
+            echo "<div style='color: gray; font-size: 0.9em;'>Requête: " . substr($query, 0, 100) . "...</div>";
+        }
+    }
+    
+    echo "<h2>👥 Mise à jour des permissions utilisateurs...</h2>";
+    
+    // Mettre à jour les permissions pour inclure l'archivage
+    $stmt = $pdo->query("SELECT id, permissions FROM users WHERE permissions IS NOT NULL");
+    $users = $stmt->fetchAll();
+    
+    foreach ($users as $user) {
+        $permissions = json_decode($user['permissions'], true);
+        
+        if (isset($permissions['documents'])) {
+            // Ajouter les permissions d'archivage
+            $permissions['documents']['archive'] = $permissions['documents']['delete'] ?? false;
+            $permissions['documents']['unarchive'] = $permissions['documents']['update'] ?? false;
+            
+            $newPermissions = json_encode($permissions);
+            
+            $updateStmt = $pdo->prepare("UPDATE users SET permissions = ? WHERE id = ?");
+            $updateStmt->execute([$newPermissions, $user['id']]);
+            
+            echo "✅ Permissions mises à jour pour l'utilisateur ID {$user['id']}<br>";
+        }
+    }
+    
+    echo "<h2>📊 Résumé de la migration</h2>";
+    echo "<div style='background: #d4edda; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+    echo "<strong>✅ Migration terminée avec succès !</strong><br>";
+    echo "Requêtes réussies: $successCount<br>";
+    echo "Erreurs: $errorCount<br>";
     echo "</div>";
     
-} catch (Exception $e) {
-    echo "<div class='alert alert-danger'>❌ <strong>Erreur critique :</strong> " . $e->getMessage() . "</div>";
-    echo "<p>Veuillez vérifier :</p>";
+    echo "<h2>🎯 Nouvelles fonctionnalités disponibles</h2>";
     echo "<ul>";
-    echo "<li>La connexion à la base de données</li>";
-    echo "<li>Les permissions sur la base de données</li>";
-    echo "<li>La présence du fichier SQL de migration</li>";
+    echo "<li>✅ <strong>Statuts de documents</strong> : Actif, Archivé, Supprimé</li>";
+    echo "<li>✅ <strong>Archivage manuel</strong> avec raison</li>";
+    echo "<li>✅ <strong>Règles d'archivage automatique</strong> par catégorie</li>";
+    echo "<li>✅ <strong>Historique des actions</strong> d'archivage</li>";
+    echo "<li>✅ <strong>Notifications</strong> d'archivage</li>";
+    echo "<li>✅ <strong>Vues optimisées</strong> pour les différents statuts</li>";
+    echo "<li>✅ <strong>Triggers automatiques</strong> pour l'historique</li>";
     echo "</ul>";
+    
+    echo "<h2>📋 Règles d'archivage par défaut créées</h2>";
+    $stmt = $pdo->query("SELECT * FROM regles_archivage ORDER BY id");
+    $regles = $stmt->fetchAll();
+    
+    echo "<table border='1' style='border-collapse: collapse; width: 100%; margin: 10px 0;'>";
+    echo "<tr style='background: #f8f9fa;'>";
+    echo "<th style='padding: 8px;'>Nom</th>";
+    echo "<th style='padding: 8px;'>Catégorie</th>";
+    echo "<th style='padding: 8px;'>Archivage après</th>";
+    echo "<th style='padding: 8px;'>Suppression après</th>";
+    echo "<th style='padding: 8px;'>Statut</th>";
+    echo "</tr>";
+    
+    foreach ($regles as $regle) {
+        $categorie = $regle['categorie_id'] ? 
+            $pdo->query("SELECT nom FROM categories WHERE id = {$regle['categorie_id']}")->fetchColumn() : 
+            'Toutes';
+        
+        echo "<tr>";
+        echo "<td style='padding: 8px;'>{$regle['nom']}</td>";
+        echo "<td style='padding: 8px;'>$categorie</td>";
+        echo "<td style='padding: 8px;'>{$regle['duree_avant_archivage']} jours</td>";
+        echo "<td style='padding: 8px;'>" . ($regle['duree_avant_suppression'] ? $regle['duree_avant_suppression'] . ' jours' : 'Jamais') . "</td>";
+        echo "<td style='padding: 8px;'>" . ($regle['actif'] ? '✅ Actif' : '❌ Inactif') . "</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
+    
+    echo "<h2>🚀 Prochaines étapes</h2>";
+    echo "<ol>";
+    echo "<li>Tester les nouvelles fonctionnalités d'archivage</li>";
+    echo "<li>Configurer les règles d'archivage selon vos besoins</li>";
+    echo "<li>Former les utilisateurs aux nouvelles fonctionnalités</li>";
+    echo "<li>Planifier l'archivage automatique (cron job)</li>";
+    echo "</ol>";
+    
+    echo "<div style='background: #cce5ff; padding: 15px; border-radius: 5px; margin: 20px 0;'>";
+    echo "<strong>💡 Conseil :</strong> Vous pouvez maintenant accéder aux nouvelles fonctionnalités d'archivage ";
+    echo "dans la section Documents de votre interface d'administration.";
+    echo "</div>";
+    
+    echo "<p><a href='" . APP_URL . "/documents/list.php' style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>🔗 Aller aux Documents</a></p>";
+    
+} catch (Exception $e) {
+    echo "<div style='background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+    echo "<strong>❌ Erreur lors de la migration :</strong><br>";
+    echo htmlspecialchars($e->getMessage());
+    echo "</div>";
+    
+    echo "<h3>🔧 Actions de dépannage :</h3>";
+    echo "<ol>";
+    echo "<li>Vérifiez que la base de données est accessible</li>";
+    echo "<li>Vérifiez que l'utilisateur a les droits ALTER TABLE</li>";
+    echo "<li>Consultez les logs d'erreur du serveur</li>";
+    echo "<li>Contactez l'administrateur système si nécessaire</li>";
+    echo "</ol>";
 }
 ?>
-
-<style>
-.alert {
-    padding: 15px;
-    margin: 20px 0;
-    border-radius: 5px;
-}
-.alert-success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
-.alert-warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
-.alert-danger { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
-.alert-info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
-</style>

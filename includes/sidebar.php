@@ -30,9 +30,16 @@
             </li>
             
             <li class="nav-item">
-                <a class="nav-link" href="<?= APP_URL ?>/documents/list.php">
+                <a class="nav-link" href="<?= APP_URL ?>/documents/search.php">
                     <i class="fas fa-search me-2"></i>
                     Rechercher
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="<?= APP_URL ?>/documents/archived.php">
+                    <i class="fas fa-archive me-2"></i>
+                    Archives
                 </a>
             </li>
             
