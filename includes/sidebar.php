@@ -71,7 +71,7 @@
             </li>
             
             <li class="nav-item">
-                <a class="nav-link" href="<?= APP_URL ?>/templates/orders.php">
+                <a class="nav-link" href="<?= APP_URL ?>/templates/orders.php" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
                     <i class="fas fa-shopping-cart me-2"></i>
                     Bons de commande
                 </a>
