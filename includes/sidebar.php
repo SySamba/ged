@@ -70,10 +70,20 @@
                 </a>
             </li>
             
-            <li class="nav-item">
-                <a class="nav-link" href="<?= APP_URL ?>/templates/orders.php" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
-                    <i class="fas fa-shopping-cart me-2"></i>
-                    Bons de commande
+            <li class="nav-item" style="display: block !important;">
+                <a class="nav-link" href="<?= APP_URL ?>/templates/orders.php" 
+                   style="display: block !important; 
+                          visibility: visible !important; 
+                          opacity: 1 !important; 
+                          position: relative !important;
+                          z-index: 1 !important;
+                          color: #333 !important;
+                          text-decoration: none !important;
+                          padding: 0.5rem 0.75rem !important;
+                          margin: 0.125rem 0.5rem !important;
+                          border-radius: 0.375rem !important;">
+                    <i class="fas fa-shopping-cart me-2" style="display: inline !important; margin-right: 0.5rem !important;"></i>
+                    <span style="display: inline !important;">Bons de commande</span>
                 </a>
             </li>
             

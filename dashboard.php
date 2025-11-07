@@ -22,7 +22,7 @@ $recentDocs = $document->search(['limit' => 5, 'order_by' => 'date_upload', 'ord
     <title>Tableau de bord - <?= APP_NAME ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="<?= APP_URL ?>/assets/css/dashboard.css" rel="stylesheet">
+    <link href="<?= APP_URL ?>/assets/css/dashboard.css?v=<?= time() ?>" rel="stylesheet">
     <style>
         /* Barre d'outils sticky */
         .sticky-toolbar {
@@ -40,6 +40,24 @@ $recentDocs = $document->search(['limit' => 5, 'order_by' => 'date_upload', 'ord
         @media (max-width: 768px) {
             .sticky-toolbar {
                 top: 56px; /* Hauteur navbar mobile */
+            }
+        }
+        
+        /* Fix pour Chrome - Forcer l'affichage du bouton Bons de commande */
+        .sidebar .nav-item a[href*="orders.php"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 999 !important;
+        }
+        
+        /* Styles spécifiques pour Chrome */
+        @media screen and (-webkit-min-device-pixel-ratio:0) {
+            .sidebar .nav-item a[href*="orders.php"] {
+                -webkit-appearance: none !important;
+                display: block !important;
+                visibility: visible !important;
             }
         }
     </style>
