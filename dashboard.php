@@ -23,6 +23,26 @@ $recentDocs = $document->search(['limit' => 5, 'order_by' => 'date_upload', 'ord
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="<?= APP_URL ?>/assets/css/dashboard.css" rel="stylesheet">
+    <style>
+        /* Barre d'outils sticky */
+        .sticky-toolbar {
+            position: sticky;
+            top: 76px; /* Hauteur de la navbar fixe */
+            background: white;
+            z-index: 1020;
+            padding: 15px 0;
+            margin: -15px 0 15px 0;
+            border-bottom: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Ajustement pour mobile */
+        @media (max-width: 768px) {
+            .sticky-toolbar {
+                top: 56px; /* Hauteur navbar mobile */
+            }
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/includes/navbar.php'; ?>
@@ -32,13 +52,17 @@ $recentDocs = $document->search(['limit' => 5, 'order_by' => 'date_upload', 'ord
             <?php include __DIR__ . '/includes/sidebar.php'; ?>
             
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom sticky-toolbar">
                     <h1 class="h2">
                         <i class="fas fa-tachometer-alt me-2"></i>
                         Tableau de bord
                     </h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
+                            <a href="<?= APP_URL ?>/templates/orders.php" class="btn btn-sm btn-success">
+                                <i class="fas fa-shopping-cart me-1"></i>
+                                Bon de commande
+                            </a>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
                                 <i class="fas fa-sync-alt"></i> Actualiser
                             </button>

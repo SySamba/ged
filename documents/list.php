@@ -87,6 +87,25 @@ $totalPages = ceil($totalDocuments / $limit);
         .btn:hover {
             transform: translateY(-2px);
         }
+        
+        /* Barre d'outils sticky */
+        .sticky-toolbar {
+            position: sticky;
+            top: 76px; /* Hauteur de la navbar fixe */
+            background: white;
+            z-index: 1020;
+            padding: 15px 0;
+            margin: -15px 0 15px 0;
+            border-bottom: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Ajustement pour mobile */
+        @media (max-width: 768px) {
+            .sticky-toolbar {
+                top: 56px; /* Hauteur navbar mobile */
+            }
+        }
     </style>
 </head>
 <body>
@@ -97,7 +116,7 @@ $totalPages = ceil($totalDocuments / $limit);
             <?php include __DIR__ . '/../includes/sidebar.php'; ?>
             
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom sticky-toolbar">
                     <h1 class="h2">
                         <i class="fas fa-folder me-2"></i>
                         Mes documents
@@ -108,6 +127,10 @@ $totalPages = ceil($totalDocuments / $limit);
                             <a href="<?= APP_URL ?>/documents/upload.php" class="btn btn-sm btn-primary">
                                 <i class="fas fa-upload me-1"></i>
                                 Uploader
+                            </a>
+                            <a href="<?= APP_URL ?>/templates/orders.php" class="btn btn-sm btn-success">
+                                <i class="fas fa-shopping-cart me-1"></i>
+                                Bon de commande
                             </a>
                         </div>
                     </div>
