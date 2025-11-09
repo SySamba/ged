@@ -64,46 +64,46 @@ class Template {
             // Remplacer les variables dans le template
             $html = $this->replaceVariables($modele['template_html'], $data);
             
-            // Enregistrer le document généré
-            $stmt = $this->pdo->prepare("
-                INSERT INTO documents_generes (modele_id, utilisateur_id, nom_document, donnees_remplies)
-                VALUES (?, ?, ?, ?)
-            ");
-            
             $nomDocument = $data['nom_document'] ?? ($modele['nom'] . '_' . date('Y-m-d_H-i-s'));
+            
+            // Générer le fichier HTML/PDF
+            $fileResult = $this->generateDocumentFile($html, $nomDocument, $data['generate_pdf'] ?? false);
+            if (!$fileResult['success']) {
+                return $fileResult;
+            }
+            
+            // Enregistrer dans documents_generes (table existante)
+            $stmt = $this->pdo->prepare("
+                INSERT INTO documents_generes (modele_id, utilisateur_id, nom_document, donnees_remplies, chemin_pdf)
+                VALUES (?, ?, ?, ?, ?)
+            ");
             
             $stmt->execute([
                 $modeleId,
                 $_SESSION['user_id'],
                 $nomDocument,
-                json_encode($data)
+                json_encode($data),
+                $fileResult['file_path']
             ]);
             
-            $documentId = $this->pdo->lastInsertId();
+            $documentGenereId = $this->pdo->lastInsertId();
             
-            // Générer le PDF si nécessaire
-            $pdfPath = null;
-            if (isset($data['generate_pdf']) && $data['generate_pdf']) {
-                $pdfPath = $this->generatePDF($html, $nomDocument);
-            }
+            // Enregistrer aussi dans la table documents pour l'intégration avec le système GED
+            $documentId = $this->saveToDocumentsTable($modele, $nomDocument, $fileResult, $data);
             
-            // Mettre à jour avec le chemin PDF si généré
-            if ($pdfPath) {
-                $stmt = $this->pdo->prepare("UPDATE documents_generes SET chemin_pdf = ? WHERE id = ?");
-                $stmt->execute([$pdfPath, $documentId]);
-            }
-            
-            logActivity('generation_document', 'documents_generes', $documentId, [
+            logActivity('generation_document', 'documents_generes', $documentGenereId, [
                 'modele_id' => $modeleId,
-                'nom_document' => $nomDocument
+                'nom_document' => $nomDocument,
+                'document_id' => $documentId
             ]);
             
             return [
                 'success' => true,
-                'document_id' => $documentId,
+                'document_id' => $documentGenereId,
+                'ged_document_id' => $documentId,
                 'html' => $html,
-                'pdf_path' => $pdfPath,
-                'message' => 'Document généré avec succès'
+                'file_path' => $fileResult['file_path'],
+                'message' => 'Document généré et enregistré avec succès'
             ];
             
         } catch (Exception $e) {
@@ -146,23 +146,69 @@ class Template {
     }
     
     /**
-     * Générer un PDF à partir du HTML
+     * Générer un fichier document (HTML/PDF) à partir du HTML
      */
-    private function generatePDF($html, $nomDocument) {
-        // Pour cette implémentation, nous sauvegardons juste le HTML
-        // Dans un environnement de production, vous pourriez utiliser une bibliothèque comme TCPDF ou DomPDF
-        
-        $filename = uniqid() . '_' . $nomDocument . '.html';
-        $filepath = UPLOAD_PATH . '/generated/' . $filename;
-        
-        // Ajouter le CSS pour l'impression
-        $fullHtml = '<!DOCTYPE html>
+    private function generateDocumentFile($html, $nomDocument, $generatePdf = false) {
+        try {
+            // Créer le répertoire s'il n'existe pas
+            $generatedDir = UPLOAD_PATH . '/documents';
+            if (!is_dir($generatedDir)) {
+                mkdir($generatedDir, 0755, true);
+            }
+            
+            // Déterminer l'extension et le type MIME
+            $extension = $generatePdf ? 'pdf' : 'html';
+            $mimeType = $generatePdf ? 'application/pdf' : 'text/html';
+            
+            // Générer un nom de fichier sécurisé
+            $filename = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $nomDocument) . '.' . $extension;
+            $filepath = $generatedDir . '/' . $filename;
+            
+            // Préparer le contenu HTML complet
+            $fullHtml = $this->prepareFullHtml($html, $nomDocument);
+            
+            if ($generatePdf) {
+                // Pour une implémentation future avec une vraie génération PDF
+                // Pour l'instant, on sauvegarde en HTML avec extension PDF
+                $success = file_put_contents($filepath, $fullHtml);
+            } else {
+                $success = file_put_contents($filepath, $fullHtml);
+            }
+            
+            if (!$success) {
+                return [
+                    'success' => false,
+                    'message' => 'Erreur lors de la création du fichier'
+                ];
+            }
+            
+            return [
+                'success' => true,
+                'file_path' => $filepath,
+                'filename' => $filename,
+                'mime_type' => $mimeType,
+                'file_size' => filesize($filepath)
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de la génération du fichier : ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Préparer le HTML complet avec CSS
+     */
+    private function prepareFullHtml($html, $nomDocument) {
+        return '<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>' . htmlspecialchars($nomDocument) . '</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
         .contrat-template, .facture-template, .bon-commande-template { max-width: 800px; margin: 0 auto; }
         h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
         h2 { color: #666; margin-top: 30px; }
@@ -182,12 +228,153 @@ class Template {
 </head>
 <body>' . $html . '</body>
 </html>';
+    }
+    
+    /**
+     * Enregistrer le document généré dans la table documents pour l'intégration GED
+     */
+    private function saveToDocumentsTable($modele, $nomDocument, $fileResult, $data) {
+        try {
+            // Déterminer la catégorie selon le type de modèle
+            $categorieId = $this->getCategoryIdByType($modele['type']);
+            
+            // Préparer les mots-clés
+            $motsCles = $this->generateKeywords($modele['type'], $data);
+            
+            // Préparer la description
+            $description = "Document généré automatiquement à partir du modèle '" . $modele['nom'] . "'";
+            if (isset($data['description']) && !empty($data['description'])) {
+                $description .= " - " . $data['description'];
+            }
+            
+            // Insérer dans la table documents
+            $stmt = $this->pdo->prepare("
+                INSERT INTO documents (nom_original, nom_fichier, chemin_fichier, type_mime, taille_fichier, 
+                                     categorie_id, utilisateur_id, mots_cles, description, source_generation)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $stmt->execute([
+                $nomDocument . '.' . pathinfo($fileResult['filename'], PATHINFO_EXTENSION),
+                $fileResult['filename'],
+                $fileResult['file_path'],
+                $fileResult['mime_type'],
+                $fileResult['file_size'],
+                $categorieId,
+                $_SESSION['user_id'],
+                $motsCles,
+                $description,
+                'template_' . $modele['type']
+            ]);
+            
+            return $this->pdo->lastInsertId();
+            
+        } catch (Exception $e) {
+            // Log l'erreur mais ne pas faire échouer la génération
+            error_log("Erreur lors de l'enregistrement dans documents: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Obtenir l'ID de catégorie selon le type de modèle
+     */
+    private function getCategoryIdByType($type) {
+        try {
+            $categoryNames = [
+                'contrat' => 'Contrats',
+                'facture' => 'Factures', 
+                'bon_commande' => 'Bons de commande'
+            ];
+            
+            $categoryName = $categoryNames[$type] ?? 'Documents générés';
+            
+            // Chercher la catégorie existante
+            $stmt = $this->pdo->prepare("SELECT id FROM categories WHERE nom = ? LIMIT 1");
+            $stmt->execute([$categoryName]);
+            $category = $stmt->fetch();
+            
+            if ($category) {
+                return $category['id'];
+            }
+            
+            // Créer la catégorie si elle n'existe pas
+            $colors = [
+                'contrat' => '#007bff',
+                'facture' => '#28a745',
+                'bon_commande' => '#ffc107'
+            ];
+            
+            $icons = [
+                'contrat' => 'fas fa-handshake',
+                'facture' => 'fas fa-receipt',
+                'bon_commande' => 'fas fa-shopping-cart'
+            ];
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO categories (nom, description, couleur, icone, utilisateur_id)
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            
+            $stmt->execute([
+                $categoryName,
+                'Catégorie créée automatiquement pour les ' . strtolower($categoryName),
+                $colors[$type] ?? '#6c757d',
+                $icons[$type] ?? 'fas fa-file',
+                $_SESSION['user_id']
+            ]);
+            
+            return $this->pdo->lastInsertId();
+            
+        } catch (Exception $e) {
+            // Retourner null si erreur, le document sera sans catégorie
+            return null;
+        }
+    }
+    
+    /**
+     * Générer des mots-clés automatiques selon le type et les données
+     */
+    private function generateKeywords($type, $data) {
+        $keywords = [$type];
         
-        if (file_put_contents($filepath, $fullHtml)) {
-            return $filepath;
+        // Ajouter des mots-clés spécifiques selon le type
+        switch ($type) {
+            case 'contrat':
+                $keywords[] = 'emploi';
+                if (isset($data['type_contrat'])) {
+                    $keywords[] = $data['type_contrat'];
+                }
+                if (isset($data['nom_employe'])) {
+                    $keywords[] = $data['nom_employe'];
+                }
+                break;
+                
+            case 'facture':
+                $keywords[] = 'facturation';
+                if (isset($data['numero_facture'])) {
+                    $keywords[] = $data['numero_facture'];
+                }
+                if (isset($data['nom_client'])) {
+                    $keywords[] = $data['nom_client'];
+                }
+                break;
+                
+            case 'bon_commande':
+                $keywords[] = 'commande';
+                if (isset($data['numero_bon'])) {
+                    $keywords[] = $data['numero_bon'];
+                }
+                if (isset($data['fournisseur'])) {
+                    $keywords[] = $data['fournisseur'];
+                }
+                break;
         }
         
-        return null;
+        // Ajouter la date
+        $keywords[] = date('Y-m');
+        
+        return implode(', ', array_unique($keywords));
     }
     
     /**

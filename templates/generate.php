@@ -125,8 +125,11 @@ $champsVariables = json_decode($modele['champs_variables'], true);
                                 <a href="<?= APP_URL ?>/templates/view.php?id=<?= $documentId ?>" class="btn btn-sm btn-primary me-2">
                                     <i class="fas fa-eye me-1"></i>Voir le document
                                 </a>
+                                <a href="<?= APP_URL ?>/documents/list.php" class="btn btn-sm btn-success me-2">
+                                    <i class="fas fa-folder me-1"></i>Voir dans mes documents
+                                </a>
                                 <a href="<?= APP_URL ?>/templates/list.php" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-list me-1"></i>Mes documents
+                                    <i class="fas fa-list me-1"></i>Mes modèles
                                 </a>
                             </div>
                         <?php endif; ?>
