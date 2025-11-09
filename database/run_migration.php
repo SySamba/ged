@@ -29,15 +29,72 @@ try {
         echo "✓ Toutes les colonnes requises sont présentes dans la table documents.\n";
     } else {
         echo "⚠ Colonnes manquantes: " . implode(', ', $missingColumns) . "\n";
-        echo "Exécution de la migration...\n";
+        echo "Ajout des colonnes manquantes une par une...\n";
         
-        // Exécuter la migration
-        $migrationFile = __DIR__ . '/migrations/add_source_generation_column.sql';
-        if (file_exists($migrationFile)) {
-            $db->executeSqlFile($migrationFile);
-            echo "✓ Migration exécutée avec succès.\n";
-        } else {
-            echo "✗ Fichier de migration introuvable.\n";
+        // Ajouter chaque colonne manquante individuellement
+        foreach ($missingColumns as $column) {
+            try {
+                switch ($column) {
+                    case 'source_generation':
+                        $pdo->exec("ALTER TABLE documents ADD COLUMN source_generation VARCHAR(50) NULL AFTER description");
+                        echo "✓ Colonne source_generation ajoutée.\n";
+                        break;
+                        
+                    case 'statut':
+                        $pdo->exec("ALTER TABLE documents ADD COLUMN statut ENUM('actif','archive','supprime') DEFAULT 'actif' AFTER source_generation");
+                        echo "✓ Colonne statut ajoutée.\n";
+                        break;
+                        
+                    case 'date_archivage':
+                        $pdo->exec("ALTER TABLE documents ADD COLUMN date_archivage TIMESTAMP NULL AFTER statut");
+                        echo "✓ Colonne date_archivage ajoutée.\n";
+                        break;
+                        
+                    case 'archive_par':
+                        $pdo->exec("ALTER TABLE documents ADD COLUMN archive_par INT NULL AFTER date_archivage");
+                        echo "✓ Colonne archive_par ajoutée.\n";
+                        break;
+                        
+                    case 'raison_archivage':
+                        $pdo->exec("ALTER TABLE documents ADD COLUMN raison_archivage TEXT NULL AFTER archive_par");
+                        echo "✓ Colonne raison_archivage ajoutée.\n";
+                        break;
+                        
+                    case 'date_suppression_prevue':
+                        $pdo->exec("ALTER TABLE documents ADD COLUMN date_suppression_prevue TIMESTAMP NULL AFTER raison_archivage");
+                        echo "✓ Colonne date_suppression_prevue ajoutée.\n";
+                        break;
+                }
+            } catch (Exception $e) {
+                echo "⚠ Erreur lors de l'ajout de la colonne $column: " . $e->getMessage() . "\n";
+            }
+        }
+        
+        // Mettre à jour les documents existants avec le statut par défaut
+        try {
+            $pdo->exec("UPDATE documents SET statut = 'actif' WHERE statut IS NULL");
+            echo "✓ Documents existants mis à jour avec le statut 'actif'.\n";
+        } catch (Exception $e) {
+            echo "⚠ Erreur lors de la mise à jour des statuts: " . $e->getMessage() . "\n";
+        }
+        
+        // Ajouter les index si nécessaire
+        try {
+            $pdo->exec("ALTER TABLE documents ADD INDEX idx_source_generation (source_generation)");
+            echo "✓ Index idx_source_generation ajouté.\n";
+        } catch (Exception $e) {
+            if (strpos($e->getMessage(), 'Duplicate key name') === false) {
+                echo "⚠ Erreur lors de l'ajout de l'index source_generation: " . $e->getMessage() . "\n";
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE documents ADD INDEX idx_statut (statut)");
+            echo "✓ Index idx_statut ajouté.\n";
+        } catch (Exception $e) {
+            if (strpos($e->getMessage(), 'Duplicate key name') === false) {
+                echo "⚠ Erreur lors de l'ajout de l'index statut: " . $e->getMessage() . "\n";
+            }
         }
     }
     
