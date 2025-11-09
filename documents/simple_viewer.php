@@ -61,23 +61,50 @@ try {
     exit;
 }
 
-// Pour les PDF, affichage direct
+// Pour les fichiers PDF, vérifier d'abord si c'est vraiment un PDF ou du HTML
 if ($extension === 'pdf') {
-    // Nettoyer le buffer de sortie
-    if (ob_get_level()) {
-        ob_end_clean();
+    // Lire les premiers caractères pour détecter le type réel
+    $handle = fopen($filePath, 'r');
+    $firstBytes = fread($handle, 100);
+    fclose($handle);
+    
+    // Si le fichier commence par du HTML, le traiter comme tel
+    if (stripos($firstBytes, '<!DOCTYPE html') !== false || stripos($firstBytes, '<html') !== false) {
+        // C'est un fichier HTML avec extension .pdf - le traiter comme HTML
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        $htmlContent = file_get_contents($filePath);
+        
+        // Ajouter un bouton de retour
+        $backButton = '
+        <div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+            <a href="' . APP_URL . '/documents/list.php" 
+               style="background: #007bff; color: white; padding: 10px 15px; 
+                      text-decoration: none; border-radius: 5px; font-family: Arial;">
+                ← Retour à la liste
+            </a>
+        </div>';
+        
+        $htmlContent = str_replace('<body>', '<body>' . $backButton, $htmlContent);
+        echo $htmlContent;
+        exit;
+    } else {
+        // C'est un vrai PDF
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . addslashes($doc['nom_original']) . '"');
+        header('Content-Length: ' . filesize($filePath));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+        
+        readfile($filePath);
+        exit;
     }
-    
-    // Headers sécurisés pour PDF
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="' . addslashes($doc['nom_original']) . '"');
-    header('Content-Length: ' . filesize($filePath));
-    header('Cache-Control: private, max-age=0, must-revalidate');
-    header('Pragma: public');
-    
-    // Lire et envoyer le fichier
-    readfile($filePath);
-    exit;
 }
 
 // Pour les images, affichage direct
