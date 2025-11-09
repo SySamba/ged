@@ -156,9 +156,9 @@ class Template {
                 mkdir($generatedDir, 0755, true);
             }
             
-            // Pour l'instant, toujours générer en HTML (plus fiable)
-            $extension = 'html';
-            $mimeType = 'text/html';
+            // Toujours générer en PDF pour les documents générés
+            $extension = 'pdf';
+            $mimeType = 'application/pdf';
             
             // Générer un nom de fichier sécurisé
             $filename = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $nomDocument) . '.' . $extension;
@@ -167,8 +167,8 @@ class Template {
             // Préparer le contenu HTML complet
             $fullHtml = $this->prepareFullHtml($html, $nomDocument);
             
-            // Sauvegarder le fichier HTML
-            $success = file_put_contents($filepath, $fullHtml);
+            // Générer le PDF à partir du HTML
+            $success = $this->generatePdfFromHtml($fullHtml, $filepath);
             
             if (!$success) {
                 return [
@@ -249,14 +249,10 @@ class Template {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
-            // Corriger l'extension dans le nom original pour correspondre au fichier réel
+            // S'assurer que le nom original a l'extension .pdf
             $nomOriginalCorrige = $nomDocument;
-            if (pathinfo($fileResult['filename'], PATHINFO_EXTENSION) === 'html') {
-                // Remplacer .pdf par .html dans le nom si nécessaire
-                $nomOriginalCorrige = preg_replace('/\.pdf$/i', '.html', $nomDocument);
-                if (!preg_match('/\.html$/i', $nomOriginalCorrige)) {
-                    $nomOriginalCorrige .= '.html';
-                }
+            if (!preg_match('/\.pdf$/i', $nomOriginalCorrige)) {
+                $nomOriginalCorrige .= '.pdf';
             }
             
             $stmt->execute([
@@ -380,6 +376,97 @@ class Template {
         $keywords[] = date('Y-m');
         
         return implode(', ', array_unique($keywords));
+    }
+    
+    /**
+     * Générer un PDF à partir du HTML en utilisant DomPDF
+     */
+    private function generatePdfFromHtml($html, $filepath) {
+        try {
+            // Vérifier si DomPDF est disponible
+            if (!class_exists('Dompdf\Dompdf')) {
+                // Si DomPDF n'est pas disponible, utiliser une solution alternative
+                return $this->generatePdfAlternative($html, $filepath);
+            }
+            
+            // Utiliser DomPDF si disponible
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            
+            $output = $dompdf->output();
+            return file_put_contents($filepath, $output) !== false;
+            
+        } catch (Exception $e) {
+            error_log("Erreur génération PDF: " . $e->getMessage());
+            return $this->generatePdfAlternative($html, $filepath);
+        }
+    }
+    
+    /**
+     * Solution alternative pour générer un PDF (utilise wkhtmltopdf si disponible, sinon HTML)
+     */
+    private function generatePdfAlternative($html, $filepath) {
+        try {
+            // Essayer wkhtmltopdf en ligne de commande
+            $tempHtmlFile = tempnam(sys_get_temp_dir(), 'doc_') . '.html';
+            file_put_contents($tempHtmlFile, $html);
+            
+            // Commande wkhtmltopdf (si installé sur le serveur)
+            $command = "wkhtmltopdf --page-size A4 --margin-top 0.75in --margin-right 0.75in --margin-bottom 0.75in --margin-left 0.75in '$tempHtmlFile' '$filepath' 2>&1";
+            $output = shell_exec($command);
+            
+            // Nettoyer le fichier temporaire
+            unlink($tempHtmlFile);
+            
+            // Vérifier si le PDF a été créé
+            if (file_exists($filepath) && filesize($filepath) > 0) {
+                return true;
+            }
+            
+            // Si wkhtmltopdf échoue, créer un PDF simple avec TCPDF ou FPDF
+            return $this->generateSimplePdf($html, $filepath);
+            
+        } catch (Exception $e) {
+            error_log("Erreur PDF alternative: " . $e->getMessage());
+            return $this->generateSimplePdf($html, $filepath);
+        }
+    }
+    
+    /**
+     * Générer un PDF simple en extrayant le texte du HTML
+     */
+    private function generateSimplePdf($html, $filepath) {
+        try {
+            // Solution de fallback : créer un PDF basique avec le contenu texte
+            require_once __DIR__ . '/../vendor/tecnickcom/tcpdf/tcpdf.php';
+            
+            if (class_exists('TCPDF')) {
+                $pdf = new \TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+                $pdf->SetCreator('DigiDocs');
+                $pdf->SetTitle('Document généré');
+                $pdf->SetMargins(15, 15, 15);
+                $pdf->AddPage();
+                
+                // Nettoyer le HTML et extraire le contenu
+                $content = strip_tags($html, '<h1><h2><h3><p><br><strong><b><em><i><ul><ol><li>');
+                $content = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+                
+                $pdf->writeHTML($content, true, false, true, false, '');
+                $pdf->Output($filepath, 'F');
+                
+                return file_exists($filepath);
+            }
+            
+            // Dernier recours : sauvegarder en HTML avec extension PDF
+            return file_put_contents($filepath, $html) !== false;
+            
+        } catch (Exception $e) {
+            error_log("Erreur PDF simple: " . $e->getMessage());
+            // Dernier recours : sauvegarder en HTML avec extension PDF
+            return file_put_contents($filepath, $html) !== false;
+        }
     }
     
     /**
