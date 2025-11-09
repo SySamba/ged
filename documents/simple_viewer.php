@@ -103,6 +103,34 @@ if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
     exit;
 }
 
+// Pour les fichiers HTML (documents générés), affichage direct
+if ($extension === 'html' || $doc['source_generation']) {
+    // Nettoyer le buffer de sortie
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    // Lire le contenu HTML
+    $htmlContent = file_get_contents($filePath);
+    
+    // Ajouter un bouton de retour en haut du document
+    $backButton = '
+    <div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+        <a href="' . APP_URL . '/documents/list.php" 
+           style="background: #007bff; color: white; padding: 10px 15px; 
+                  text-decoration: none; border-radius: 5px; font-family: Arial;">
+            ← Retour à la liste
+        </a>
+    </div>';
+    
+    // Injecter le bouton après la balise <body>
+    $htmlContent = str_replace('<body>', '<body>' . $backButton, $htmlContent);
+    
+    // Afficher le contenu HTML
+    echo $htmlContent;
+    exit;
+}
+
 // Pour les autres fichiers, page de téléchargement
 ?>
 <!DOCTYPE html>

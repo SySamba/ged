@@ -5,9 +5,9 @@
 
 class Database {
     private $host = 'localhost';
-    private $db_name = 'digidocs';
-    private $username = 'root';
-    private $password = '';
+    private $db_name = 'u588247422_geddb';
+    private $username = 'u588247422_geduser';
+    private $password = 'Khombole2021';
     private $charset = 'utf8mb4';
     private $pdo;
 

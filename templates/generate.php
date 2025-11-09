@@ -68,6 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $success = $result['message'];
         $generatedHtml = $result['html'];
         $documentId = $result['document_id'];
+        $gedDocumentId = $result['ged_document_id'];
+        
+        // Redirection automatique vers la liste des documents après 3 secondes
+        $_SESSION['success'] = $success . " Le document a été ajouté à votre liste de documents.";
+        header("refresh:3;url=" . APP_URL . "/documents/list.php");
     } else {
         $error = $result['message'];
     }

@@ -156,9 +156,9 @@ class Template {
                 mkdir($generatedDir, 0755, true);
             }
             
-            // Déterminer l'extension et le type MIME
-            $extension = $generatePdf ? 'pdf' : 'html';
-            $mimeType = $generatePdf ? 'application/pdf' : 'text/html';
+            // Pour l'instant, toujours générer en HTML (plus fiable)
+            $extension = 'html';
+            $mimeType = 'text/html';
             
             // Générer un nom de fichier sécurisé
             $filename = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $nomDocument) . '.' . $extension;
@@ -167,13 +167,8 @@ class Template {
             // Préparer le contenu HTML complet
             $fullHtml = $this->prepareFullHtml($html, $nomDocument);
             
-            if ($generatePdf) {
-                // Pour une implémentation future avec une vraie génération PDF
-                // Pour l'instant, on sauvegarde en HTML avec extension PDF
-                $success = file_put_contents($filepath, $fullHtml);
-            } else {
-                $success = file_put_contents($filepath, $fullHtml);
-            }
+            // Sauvegarder le fichier HTML
+            $success = file_put_contents($filepath, $fullHtml);
             
             if (!$success) {
                 return [
