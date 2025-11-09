@@ -249,8 +249,18 @@ class Template {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
+            // Corriger l'extension dans le nom original pour correspondre au fichier réel
+            $nomOriginalCorrige = $nomDocument;
+            if (pathinfo($fileResult['filename'], PATHINFO_EXTENSION) === 'html') {
+                // Remplacer .pdf par .html dans le nom si nécessaire
+                $nomOriginalCorrige = preg_replace('/\.pdf$/i', '.html', $nomDocument);
+                if (!preg_match('/\.html$/i', $nomOriginalCorrige)) {
+                    $nomOriginalCorrige .= '.html';
+                }
+            }
+            
             $stmt->execute([
-                $nomDocument . '.' . pathinfo($fileResult['filename'], PATHINFO_EXTENSION),
+                $nomOriginalCorrige,
                 $fileResult['filename'],
                 $fileResult['file_path'],
                 $fileResult['mime_type'],
