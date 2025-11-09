@@ -75,6 +75,11 @@ if ($extension === 'pdf') {
             ob_end_clean();
         }
         
+        // FORCER l'affichage HTML dans le navigateur
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+        
         $htmlContent = file_get_contents($filePath);
         
         // Ajouter un bouton de retour
@@ -82,7 +87,7 @@ if ($extension === 'pdf') {
         <div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
             <a href="' . APP_URL . '/documents/list.php" 
                style="background: #007bff; color: white; padding: 10px 15px; 
-                      text-decoration: none; border-radius: 5px; font-family: Arial;">
+                      text-decoration: none; border-radius: 5px; font-family: Arial; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                 ← Retour à la liste
             </a>
         </div>';
