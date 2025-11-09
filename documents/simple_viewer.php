@@ -29,6 +29,11 @@ try {
     
     // Le chemin_fichier contient déjà le chemin complet
     $filePath = $doc['chemin_fichier'];
+    
+    // Debug : afficher les informations du fichier
+    error_log("DEBUG simple_viewer: Document ID={$doc['id']}, Nom={$doc['nom_original']}, Chemin=$filePath");
+    error_log("DEBUG simple_viewer: Fichier existe=" . (file_exists($filePath) ? 'OUI' : 'NON'));
+    error_log("DEBUG simple_viewer: Source generation=" . ($doc['source_generation'] ?? 'NULL'));
     $extension = strtolower(pathinfo($doc['nom_original'], PATHINFO_EXTENSION));
     
     // Vérifier que le fichier existe
