@@ -30,7 +30,7 @@
             </li>
             
             <li class="nav-item">
-                <a class="nav-link" href="<?= APP_URL ?>/documents/search.php">
+                <a class="nav-link" href="<?= APP_URL ?>/documents/list.php">
                     <i class="fas fa-search me-2"></i>
                     Rechercher
                 </a>

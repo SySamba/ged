@@ -1,17 +1,5 @@
 <?php
-session_start();
-require_once '../../config/database.php';
-require_once '../../classes/User.php';
-require_once '../../classes/PurchaseRequest.php';
-
-// Vérifier l'authentification
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../../auth/login.php');
-    exit();
-}
-
-$user = new User();
-$user->read($_SESSION['user_id']);
+require_once __DIR__ . '/../config/purchase_config.php';
 
 $message = '';
 $error = '';
@@ -57,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Récupérer les catégories
-$db = new Database();
+$db = getPurchaseDatabase();
 $pdo = $db->getConnection();
 $categories_query = "SELECT * FROM purchase_categories ORDER BY name";
 $categories_stmt = $pdo->prepare($categories_query);
@@ -133,7 +121,7 @@ $page_title = "Nouvelle demande d'achat";
                                         <div class="col-md-6 mb-3">
                                             <label for="department" class="form-label">Département *</label>
                                             <input type="text" class="form-control" id="department" name="department" 
-                                                   value="<?php echo htmlspecialchars($user->department ?? ''); ?>" required>
+                                                   value="<?php echo htmlspecialchars($_SESSION['department'] ?? ''); ?>" required>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="priority" class="form-label">Priorité *</label>
@@ -200,7 +188,7 @@ $page_title = "Nouvelle demande d'achat";
                                     <h5 class="mb-0"><i class="fas fa-info me-2"></i>Informations</h5>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>Demandeur:</strong> <?php echo htmlspecialchars($user->username); ?></p>
+                                    <p><strong>Demandeur:</strong> <?php echo htmlspecialchars($_SESSION['username'] ?? 'Utilisateur'); ?></p>
                                     <p><strong>Date de création:</strong> <?php echo date('d/m/Y H:i'); ?></p>
                                     <p><strong>Statut:</strong> <span class="badge bg-secondary">Brouillon</span></p>
                                     
