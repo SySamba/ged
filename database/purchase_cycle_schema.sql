@@ -226,16 +226,16 @@ CREATE TABLE IF NOT EXISTS purchase_attachments (
     FOREIGN KEY (uploaded_by) REFERENCES users(id)
 );
 
--- Index pour améliorer les performances
-CREATE INDEX idx_purchase_requests_status ON purchase_requests(status);
-CREATE INDEX idx_purchase_orders_status ON purchase_orders(status);
-CREATE INDEX idx_purchase_invoices_status ON purchase_invoices(status);
-CREATE INDEX idx_purchase_requests_requester ON purchase_requests(requester_id);
-CREATE INDEX idx_purchase_orders_supplier ON purchase_orders(supplier_id);
-CREATE INDEX idx_approval_workflows_document ON approval_workflows(document_type, document_id);
+-- Index pour améliorer les performances (avec vérification d'existence)
+CREATE INDEX IF NOT EXISTS idx_purchase_requests_status ON purchase_requests(status);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_status ON purchase_orders(status);
+CREATE INDEX IF NOT EXISTS idx_purchase_invoices_status ON purchase_invoices(status);
+CREATE INDEX IF NOT EXISTS idx_purchase_requests_requester ON purchase_requests(requester_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_supplier ON purchase_orders(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_approval_workflows_document ON approval_workflows(document_type, document_id);
 
--- Insertion des catégories par défaut
-INSERT INTO purchase_categories (name, description, budget_code) VALUES
+-- Insertion des catégories par défaut (avec vérification d'existence)
+INSERT IGNORE INTO purchase_categories (name, description, budget_code) VALUES
 ('Fournitures de bureau', 'Papeterie, consommables bureau', 'FB001'),
 ('Matériel informatique', 'Ordinateurs, périphériques, logiciels', 'IT001'),
 ('Mobilier', 'Bureaux, chaises, mobilier de bureau', 'MOB001'),
