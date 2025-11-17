@@ -5,14 +5,28 @@ requireLogin();
 // Récupérer les demandes d'achat
 $database = new Database();
 $pdo = $database->getConnection();
+$requests = [];
+$installation_needed = false;
 
-$query = "SELECT pr.*, u.username as requester_name 
-          FROM purchase_requests pr 
-          LEFT JOIN users u ON pr.requester_id = u.id 
-          ORDER BY pr.created_at DESC";
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-$requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // Vérifier si les tables existent
+    $stmt = $pdo->prepare("SHOW TABLES LIKE 'purchase_requests'");
+    $stmt->execute();
+    
+    if ($stmt->rowCount() > 0) {
+        $query = "SELECT pr.*, u.username as requester_name 
+                  FROM purchase_requests pr 
+                  LEFT JOIN users u ON pr.requester_id = u.id 
+                  ORDER BY pr.created_at DESC";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $installation_needed = true;
+    }
+} catch (Exception $e) {
+    $installation_needed = true;
+}
 
 $page_title = "Liste des demandes d'achat";
 ?>
@@ -43,69 +57,36 @@ $page_title = "Liste des demandes d'achat";
                     </div>
                 </div>
 
-                <!-- Statistiques rapides -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card text-white bg-primary">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6>Total</h6>
-                                        <h4><?= count($requests) ?></h4>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-file-alt fa-2x"></i>
-                                    </div>
+                <?php if ($installation_needed): ?>
+                    <!-- Message d'installation -->
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
+                        <div>
+                            <h5 class="mb-1">Installation requise</h5>
+                            <p class="mb-2">Le module d'achat n'est pas encore installé. Les tables de base de données sont manquantes.</p>
+                            <a href="../repair_installation.php" class="btn btn-warning btn-sm">
+                                <i class="fas fa-wrench me-2"></i>Installer le module
+                            </a>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <!-- Résumé rapide -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert alert-info d-flex align-items-center">
+                                <i class="fas fa-info-circle me-3 fa-2x"></i>
+                                <div>
+                                    <h5 class="mb-1">Résumé des demandes</h5>
+                                    <p class="mb-0">
+                                        <strong><?= count($requests) ?></strong> demandes au total • 
+                                        <span class="text-warning"><strong><?= count(array_filter($requests, fn($r) => $r['status'] === 'submitted')) ?></strong> en attente</span> • 
+                                        <span class="text-success"><strong><?= count(array_filter($requests, fn($r) => $r['status'] === 'approved')) ?></strong> approuvées</span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-warning">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6>En attente</h6>
-                                        <h4><?= count(array_filter($requests, fn($r) => $r['status'] === 'submitted')) ?></h4>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-clock fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-success">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6>Approuvées</h6>
-                                        <h4><?= count(array_filter($requests, fn($r) => $r['status'] === 'approved')) ?></h4>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-check fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-secondary">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h6>Brouillons</h6>
-                                        <h4><?= count(array_filter($requests, fn($r) => $r['status'] === 'draft')) ?></h4>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-edit fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <!-- Liste des demandes -->
                 <div class="card">

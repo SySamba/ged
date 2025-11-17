@@ -2,51 +2,79 @@
 require_once __DIR__ . '/../../config/config.php';
 requireLogin();
 
-// Récupérer les données pour le suivi du workflow
-$database = new Database();
-$pdo = $database->getConnection();
+// Initialiser les données par défaut
+$requests_by_status = [];
+$orders_by_status = [];
+$workflow_items = [];
 
-// Statistiques du workflow complet
-$stats = [];
+try {
+    // Récupérer les données pour le suivi du workflow
+    $database = new Database();
+    $pdo = $database->getConnection();
 
-// Demandes d'achat par statut
-$query = "SELECT status, COUNT(*) as count FROM purchase_requests GROUP BY status";
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-$requests_by_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    // Vérifier si les tables existent
+    $tables_exist = true;
+    try {
+        $stmt = $pdo->prepare("SHOW TABLES LIKE 'purchase_requests'");
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            $tables_exist = false;
+        }
+    } catch (Exception $e) {
+        $tables_exist = false;
+    }
 
-// Bons de commande par statut
-$query = "SELECT status, COUNT(*) as count FROM purchase_orders GROUP BY status";
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-$orders_by_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    if ($tables_exist) {
+        // Demandes d'achat par statut
+        $query = "SELECT status, COUNT(*) as count FROM purchase_requests GROUP BY status";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $requests_by_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // Bons de commande par statut
+        $query = "SELECT status, COUNT(*) as count FROM purchase_orders GROUP BY status";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $orders_by_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+} catch (Exception $e) {
+    // En cas d'erreur, utiliser des données par défaut
+    $requests_by_status = [];
+    $orders_by_status = [];
+}
 
 // Workflow complet - Demandes avec leur progression
-$query = "SELECT 
-    pr.id as request_id,
-    pr.request_number,
-    pr.title,
-    pr.total_amount,
-    pr.status as request_status,
-    pr.created_at as request_date,
-    u.username as requester_name,
-    
-    po.id as order_id,
-    po.order_number,
-    po.status as order_status,
-    po.order_date,
-    s.name as supplier_name
-    
-FROM purchase_requests pr
-LEFT JOIN users u ON pr.requester_id = u.id
-LEFT JOIN purchase_orders po ON pr.id = po.request_id
-LEFT JOIN suppliers s ON po.supplier_id = s.id
-ORDER BY pr.created_at DESC
-LIMIT 50";
+if ($tables_exist) {
+    try {
+        $query = "SELECT 
+            pr.id as request_id,
+            pr.request_number,
+            pr.title,
+            pr.total_amount,
+            pr.status as request_status,
+            pr.created_at as request_date,
+            u.username as requester_name,
+            
+            po.id as order_id,
+            po.order_number,
+            po.status as order_status,
+            po.order_date,
+            s.name as supplier_name
+            
+        FROM purchase_requests pr
+        LEFT JOIN users u ON pr.requester_id = u.id
+        LEFT JOIN purchase_orders po ON pr.id = po.request_id
+        LEFT JOIN suppliers s ON po.supplier_id = s.id
+        ORDER BY pr.created_at DESC
+        LIMIT 50";
 
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-$workflow_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $workflow_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $workflow_items = [];
+    }
+}
 
 $page_title = "Suivi du cycle d'achat";
 ?>
