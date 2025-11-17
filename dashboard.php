@@ -254,28 +254,40 @@ $recentDocs = $document->search(['limit' => 5, 'order_by' => 'date_upload', 'ord
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
                                         <a href="<?= APP_URL ?>/documents/upload.php" class="btn btn-primary btn-lg w-100">
                                             <i class="fas fa-upload mb-2"></i><br>
                                             Uploader un document
                                         </a>
                                     </div>
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
                                         <a href="<?= APP_URL ?>/documents/list.php" class="btn btn-info btn-lg w-100">
                                             <i class="fas fa-search mb-2"></i><br>
                                             Rechercher documents
                                         </a>
                                     </div>
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                                        <a href="<?= APP_URL ?>/purchases/" class="btn btn-danger btn-lg w-100">
+                                            <i class="fas fa-shopping-cart mb-2"></i><br>
+                                            Gestion des Achats
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
                                         <a href="<?= APP_URL ?>/templates/list.php" class="btn btn-success btn-lg w-100">
                                             <i class="fas fa-file-contract mb-2"></i><br>
                                             Modèles Canva
                                         </a>
                                     </div>
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
                                         <a href="<?= APP_URL ?>/jobs/list.php" class="btn btn-warning btn-lg w-100">
                                             <i class="fas fa-briefcase mb-2"></i><br>
                                             Offres d'emploi
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                                        <a href="<?= APP_URL ?>/purchases/requests/create.php" class="btn btn-outline-danger btn-lg w-100">
+                                            <i class="fas fa-plus-circle mb-2"></i><br>
+                                            Nouvelle demande
                                         </a>
                                     </div>
                                 </div>

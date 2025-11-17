@@ -89,6 +89,54 @@
             
             <li class="nav-item">
                 <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Gestion des Achats</span>
+                </h6>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="<?= APP_URL ?>/purchases/">
+                    <i class="fas fa-shopping-cart me-2"></i>
+                    Tableau de bord Achats
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="<?= APP_URL ?>/purchases/requests/create.php">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Nouvelle demande
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="<?= APP_URL ?>/purchases/requests/list.php">
+                    <i class="fas fa-file-alt me-2"></i>
+                    Demandes d'achat
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="<?= APP_URL ?>/purchases/orders/list.php">
+                    <i class="fas fa-file-invoice me-2"></i>
+                    Bons de commande
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="<?= APP_URL ?>/purchases/suppliers/list.php">
+                    <i class="fas fa-building me-2"></i>
+                    Fournisseurs
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="<?= APP_URL ?>/purchases/workflow/tracking.php">
+                    <i class="fas fa-route me-2"></i>
+                    Suivi du cycle d'achat
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
                     <span>Emploi</span>
                 </h6>
             </li>
